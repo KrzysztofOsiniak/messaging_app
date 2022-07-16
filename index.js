@@ -10,7 +10,7 @@ const MySQLStore = MySQLSession(session);
 import usersRoutes from './routes/users.js'
 import homeRoutes from './routes/home.js'
 const app = express()
-const PORT = proccess.env.PORT || 3000;
+const port = proccess.env.PORT || 3000;
 
 app.use(helmet())
 
@@ -72,4 +72,4 @@ app.get('/*', (req, res) => {
     res.redirect('/home');
 });
 
-app.listen(PORT, () => console.log(`running on ${PORT}`));
+app.listen(port, () => console.log(`running on ${port}`));
