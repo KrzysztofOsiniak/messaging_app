@@ -10,7 +10,7 @@ const MySQLStore = MySQLSession(session);
 import usersRoutes from './routes/users.js'
 import homeRoutes from './routes/home.js'
 const app = express()
-const port = proccess.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
 app.use(helmet())
 
