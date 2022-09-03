@@ -5,7 +5,7 @@ form.addEventListener("submit", (e) =>{
     const data = new FormData();
     data.append("username", document.getElementById("name").value);
     data.append("password", document.getElementById("password").value);
-    fetch('http://localhost:8080/users/login', {
+    fetch('https://loginapptesting.herokuapp.com/users/login', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
@@ -17,7 +17,7 @@ form.addEventListener("submit", (e) =>{
     .then(response => response.json())
     .then(result => {
         if(result.status == 200) {
-            window.location.replace("http://localhost:8080/home");
+            window.location.replace("https://loginapptesting.herokuapp.com/home");
         } else if(result.status == 500) {
             alert("unknown server error occurred");
         }

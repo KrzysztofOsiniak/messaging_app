@@ -5,7 +5,7 @@ const signup = document.querySelector('.signup2');
 const chattext = document.querySelector('.chattext');
 const chatinput = document.querySelector('.chatinput');
 
-fetch('http://localhost:8080/home/data', {
+fetch('https://loginapptesting.herokuapp.com/home/data', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -25,15 +25,15 @@ fetch('http://localhost:8080/home/data', {
 });
 
 login.addEventListener('click', () => {
-    window.location.href = "http://localhost:8080/users/login";
+    window.location.href = "https://loginapptesting.herokuapp.com/users/login";
 });
 
 signup.addEventListener('click', () => {
-    window.location.href = "http://localhost:8080/users/signup";
+    window.location.href = "https://loginapptesting.herokuapp.com/users/signup";
 });
 
 logout.addEventListener('click', () => {
-    fetch('http://localhost:8080/logout', {
+    fetch('https://loginapptesting.herokuapp.com/logout', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -55,7 +55,7 @@ chatinput.addEventListener("keypress", (e) => {
     if(e.key === 'Enter') {
         e.preventDefault();
         const data = new FormData();
-        fetch('http://localhost:8080/home/chattext', {
+        fetch('https://loginapptesting.herokuapp.com/home/chattext', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
