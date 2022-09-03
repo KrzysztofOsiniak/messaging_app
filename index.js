@@ -17,9 +17,9 @@ app.use(helmet())
 const __dirname = path.resolve();
 
 const options = {
-    host: 'localhost',
-    user: 'root',
-    password: 'Admin',
+    host: 'eu-cdbr-west-03.cleardb.net',
+    user: 'b6f5375c863810',
+    password: '97d46c8e',
     database: 'users',
     clearExpired: true,
     checkExpirationInterval: 1000 * 60, /* 1 minute */
