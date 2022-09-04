@@ -3,7 +3,7 @@ import path from 'path'
 
 const __dirname = path.resolve();
 const router = express.Router();
-let sometext = "test";
+let chatmessages = [];
 
 router.use('/', express.static('routes/home'));
 
@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
 
 router.get('/data', (req, res) => {
     if(req.session.logged) {
-        res.send({username: req.session.username, status: 200, text: sometext});
+        res.send({username: req.session.username, status: 200, text: chatmessages});
     } else {
         res.send({status: 401});
     }
@@ -21,8 +21,8 @@ router.get('/data', (req, res) => {
 
 router.post('/chattext', (req, res) => {
     if( (req.body.text.length < 50) && (req.session.logged) ) {
-        sometext = sometext + " " + req.body.text;
-        res.status(200).send({status: 200, text: sometext});
+        chatmessages.push(req.body.nickname + ": " + req.body.text);
+        res.status(200).send({status: 200, text: req.body.nickname + ": " + req.body.text});
     } else {
         if(req.session.logged) {
             res.send({status: 400, text: "text is too long"});

@@ -1,9 +1,10 @@
-const text = document.querySelector('.text');
+const nickname = document.querySelector('.name');
 const logout = document.querySelector('.logout');
 const login = document.querySelector('.login2');
 const signup = document.querySelector('.signup2');
 const chattext = document.querySelector('.chattext');
 const chatinput = document.querySelector('.chatinput');
+let username;
 
 fetch('https://loginapptesting.herokuapp.com/home/data', {
         method: 'GET',
@@ -14,11 +15,21 @@ fetch('https://loginapptesting.herokuapp.com/home/data', {
     .then(response => response.json())
     .then(user => {
         if((user.status == 200)) {
-            text.textContent = user.username;
+            nickname.textContent = user.username;
+            username = user.username;
             logout.classList.toggle('logout');
             login.classList.toggle('login');
             signup.classList.toggle('signup');
-            chattext.textContent = user.text;
+            chattext.textContent = "";
+            user.text.forEach(element => {
+                let first = document.createElement("div");
+                let second = document.createElement("h2");
+                second.classList.add('chattext');
+                let third = document.createTextNode(element);
+                second.appendChild(third);
+                first.appendChild(second);
+                chattext.appendChild(first);
+            });
         }
     }).catch(err => {
         console.error(err);
@@ -40,7 +51,7 @@ logout.addEventListener('click', () => {
         }
     })
     .then(() => {
-        text.textContent = 'Not logged in';
+        nickname.textContent = 'Not logged in';
         logout.classList.toggle('logout');
         login.classList.toggle('login');
         signup.classList.toggle('signup');
@@ -61,13 +72,20 @@ chatinput.addEventListener("keypress", (e) => {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            text: document.querySelector('.chatinput').value
+            text: document.querySelector('.chatinput').value,
+            nickname: username
         })
         })
         .then(response => response.json())
         .then(result => {
             if(result.status == 200) {
-                chattext.textContent = result.text;
+                let first = document.createElement("div");
+                let second = document.createElement("h2");
+                second.classList.add('chattext');
+                let third = document.createTextNode(result.text);
+                second.appendChild(third);
+                first.appendChild(second);
+                chattext.appendChild(first);
                 chatinput.value = "";
             } else if(result.status == 500) {
                 alert("unknown server error occurred");
