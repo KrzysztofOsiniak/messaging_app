@@ -3,14 +3,28 @@ import session from 'express-session'
 import MySQLSession from 'express-mysql-session'
 import {v4} from 'uuid'
 import path from 'path'
-import helmet from'helmet'
+import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import { createServer } from "http";
+import { Server } from "socket.io";
 const MySQLStore = MySQLSession(session);
 
 import usersRoutes from './routes/users.js'
 import homeRoutes from './routes/home.js'
 const app = express()
 const port = process.env.PORT || 3000;
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {});
+
+io.on("connection", (socket) => {
+    socket.on('message_in', (message) => {
+        socket.broadcast.emit('message_out', message);
+    });
+    socket.on('logout', () => {
+        socket.disconnect();
+    });
+});
 
 app.use(helmet())
 
@@ -72,4 +86,4 @@ app.get('/*', (req, res) => {
     res.redirect('/home');
 });
 
-app.listen(port, () => console.log(`running on ${port}`));
+httpServer.listen(port, () => console.log(`running on ${port}`));

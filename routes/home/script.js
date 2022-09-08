@@ -5,6 +5,19 @@ const signup = document.querySelector('.signup2');
 const chattext = document.querySelector('.chattext');
 const chatinput = document.querySelector('.chatinput');
 let username;
+let socket;
+
+function listen() {
+    socket.on('message_out', (message) => {
+        let first = document.createElement("div");
+        let second = document.createElement("h2");
+        second.classList.add('chattext');
+        let third = document.createTextNode(message);
+        second.appendChild(third);
+        first.appendChild(second);
+        chattext.appendChild(first);   
+    });
+}
 
 fetch('https://loginapptesting.herokuapp.com/home/data', {
         method: 'GET',
@@ -30,6 +43,8 @@ fetch('https://loginapptesting.herokuapp.com/home/data', {
                 first.appendChild(second);
                 chattext.appendChild(first);
             });
+            socket = io();
+            listen();
         }
     }).catch(err => {
         console.error(err);
@@ -56,6 +71,7 @@ logout.addEventListener('click', () => {
         login.classList.toggle('login');
         signup.classList.toggle('signup');
         chattext.textContent = "";
+        socket.emit('logout');
     })
     .catch(err => {
         console.error(err);
@@ -87,6 +103,7 @@ chatinput.addEventListener("keypress", (e) => {
                 first.appendChild(second);
                 chattext.appendChild(first);
                 chatinput.value = "";
+                socket.emit('message_in', result.text)
             } else if(result.status == 500) {
                 alert("unknown server error occurred");
             } else if(result.status == 400) {
