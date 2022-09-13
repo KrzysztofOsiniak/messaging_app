@@ -6,7 +6,7 @@ const __dirname = path.resolve();
 
 export const getlogin = (req, res) => {
     if(req.session.logged) {
-        res.redirect('https://loginapptesting.herokuapp.com/home')
+        res.redirect('http://localhost:8080/home')
         return
     }
     res.sendFile(path.resolve(__dirname, './routes/login/main.html'))
@@ -81,7 +81,7 @@ export const postlogin = async (req, res) => {
 
 export const getsignup = (req, res) => {
     if(req.session.logged) {
-        res.redirect('https://loginapptesting.herokuapp.com/home/')
+        res.redirect('http://localhost:8080/home')
         return
     }
     res.sendFile(path.resolve(__dirname, './routes/signup/main.html'))

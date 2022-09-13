@@ -19,7 +19,7 @@ function listen() {
     });
 }
 
-fetch('https://loginapptesting.herokuapp.com/home/data', {
+fetch('http://localhost:8080/home/data', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -51,15 +51,15 @@ fetch('https://loginapptesting.herokuapp.com/home/data', {
 });
 
 login.addEventListener('click', () => {
-    window.location.href = "https://loginapptesting.herokuapp.com/users/login";
+    window.location.href = "http://localhost:8080/users/login";
 });
 
 signup.addEventListener('click', () => {
-    window.location.href = "https://loginapptesting.herokuapp.com/users/signup";
+    window.location.href = "http://localhost:8080/users/signup";
 });
 
 logout.addEventListener('click', () => {
-    fetch('https://loginapptesting.herokuapp.com/logout', {
+    fetch('http://localhost:8080/logout', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -82,7 +82,7 @@ chatinput.addEventListener("keypress", (e) => {
     if(e.key === 'Enter') {
         e.preventDefault();
         const data = new FormData();
-        fetch('https://loginapptesting.herokuapp.com/home/chattext', {
+        fetch('http://localhost:8080/home/chattext', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

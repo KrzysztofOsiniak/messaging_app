@@ -12,7 +12,7 @@ const MySQLStore = MySQLSession(session);
 import usersRoutes from './routes/users.js'
 import homeRoutes from './routes/home.js'
 const app = express()
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {});
@@ -26,15 +26,16 @@ io.on("connection", (socket) => {
     });
 });
 
+
 app.use(helmet())
 
 const __dirname = path.resolve();
 
 const options = {
-    host: 'eu-cdbr-west-03.cleardb.net',
-    user: 'b6f5375c863810',
-    password: '97d46c8e',
-    database: 'heroku_5ebacd39459ed19',
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'users',
     clearExpired: true,
     checkExpirationInterval: 1000 * 60, /* 1 minute */
 };
