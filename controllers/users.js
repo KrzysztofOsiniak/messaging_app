@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv'
+dotenv.config()
 import db from '../database.js'
 import bcrypt from 'bcrypt'
 import path from 'path'
@@ -6,7 +8,7 @@ const __dirname = path.resolve();
 
 export const getlogin = (req, res) => {
     if(req.session.logged) {
-        res.redirect('http://localhost:8080/home')
+        res.redirect(process.env.HOMEPAGE)
         return
     }
     res.sendFile(path.resolve(__dirname, './routes/login/main.html'))
@@ -81,7 +83,7 @@ export const postlogin = async (req, res) => {
 
 export const getsignup = (req, res) => {
     if(req.session.logged) {
-        res.redirect('http://localhost:8080/home')
+        res.redirect(process.env.HOMEPAGE)
         return
     }
     res.sendFile(path.resolve(__dirname, './routes/signup/main.html'))

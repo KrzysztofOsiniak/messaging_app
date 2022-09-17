@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv'
+dotenv.config()
 import express from 'express'
 import session from 'express-session'
 import MySQLSession from 'express-mysql-session'
@@ -32,10 +34,10 @@ app.use(helmet())
 const __dirname = path.resolve();
 
 const options = {
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'users',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     clearExpired: true,
     checkExpirationInterval: 1000 * 60, /* 1 minute */
 };
