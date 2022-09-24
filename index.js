@@ -16,6 +16,8 @@ import homeRoutes from './routes/home.js'
 const app = express()
 const port = process.env.PORT || 8080;
 
+app.disable('x-powered-by');
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {});
 
@@ -74,16 +76,6 @@ app.use(limiter)
 app.use('/users', usersRoutes);
 
 app.use('/home', homeRoutes);
-
-
-app.post('/logout', (req, res) => {
-    if(req.session.logged) {
-        req.session.destroy();
-        res.status(200).redirect('back');
-    } else {
-        res.sendStatus(401);
-    }
-});
 
 app.get('/*', (req, res) => {
     res.redirect('/home');

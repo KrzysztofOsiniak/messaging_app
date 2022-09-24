@@ -1,10 +1,7 @@
 body {
     background: cornflowerblue;
 }
-.login {
-    cursor: pointer;
-}
-.signup {
+.logout {
     cursor: pointer;
 }
 .hover {

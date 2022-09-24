@@ -6,9 +6,14 @@ const router = express.Router();
 let chatmessages = [];
 
 router.use('/', express.static('routes/home'));
+router.use('/', express.static('routes/home_logged'));
 
 router.get('/', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'routes/home/main.html'));
+    if(req.session.logged) {
+        res.sendFile(path.resolve(__dirname, 'routes/home_logged/main2.html'));
+    } else {
+        res.sendFile(path.resolve(__dirname, 'routes/home/main.html'));
+    }
 });
 
 router.get('/data', (req, res) => {
@@ -31,6 +36,15 @@ router.post('/chattext', (req, res) => {
         } else {
             res.status(500).send({status: 500});
         }
+    }
+});
+
+router.post('/logout', (req, res) => {
+    if(req.session.logged) {
+        req.session.destroy();
+        res.status(200).redirect('back');
+    } else {
+        res.sendStatus(401);
     }
 });
 
