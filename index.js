@@ -50,7 +50,7 @@ app.use(session({
         return v4()
       },
     store: sessionStore,
-    secret: 'strt,46,8x/.65xhgfcjhgsrgsdfvcvbhj435345tset45esrts5tm',
+    secret: process.env.SESSION_SECRET,
     saveUninitialized: false,
     resave: true,
     cookie: { 
