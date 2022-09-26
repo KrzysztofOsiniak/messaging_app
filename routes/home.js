@@ -25,11 +25,16 @@ router.get('/data', (req, res) => {
 });
 
 router.post('/chattext', (req, res) => {
-    if( (req.body.text.length < 50) && (req.session.logged) ) {
-        chatmessages.push(req.body.nickname + ": " + req.body.text);
-        res.status(200).send({status: 200, text: req.body.nickname + ": " + req.body.text});
+    const message = req.body.text.trim();
+    if( (message.length < 50) && (req.session.logged) && message ) {
+        chatmessages.push(req.body.nickname + ": " + message);
+        res.status(200).send({status: 200, text: req.body.nickname + ": " + message});
     } else {
         if(req.session.logged) {
+            if(!message) {
+                res.send({status: 400, text: "can't send empty message"});
+                return
+            }
             res.send({status: 400, text: "text is too long"});
         } else if(req.session.logged != 1) {
             res.send({status: 401, text: "log in to see and type in chat"});

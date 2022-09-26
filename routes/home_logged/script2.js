@@ -84,9 +84,15 @@ chatinput.addEventListener("keypress", (e) => {
                 first.appendChild(second);
                 chattext.appendChild(first);
                 chatinput.value = "";
+                if(chatinput.placeholder != "...") {
+                    chatinput.placeholder = "...";
+                }
                 socket.emit('message_in', result.text)
             } else if(result.status == 500) {
                 alert("unknown server error occurred");
+            } else {
+                chatinput.value = "";
+                chatinput.placeholder = result.text;
             }
         })
         .catch(error => {

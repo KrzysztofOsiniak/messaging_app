@@ -100,7 +100,8 @@ export const postsignup = (req, res) => {
     setTimeout(async () => {
         const username = req.body.username;
         const password = req.body.password;
-        if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) ) {
+        const regtest = new RegExp(/[^!-~]/g);
+        if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) || (regtest.test(username)) ) {
             req.session.destroy()
             res.status(400).send({status: 400});
             return
