@@ -1,5 +1,6 @@
 const nickname = document.querySelector('.name');
 const logout = document.querySelector('.logout');
+const chat = document.querySelector('.chat');
 const chattext = document.querySelector('.chattext');
 const chatinput = document.querySelector('.chatinput');
 let username;
@@ -13,7 +14,8 @@ function listen() {
         let third = document.createTextNode(message);
         second.appendChild(third);
         first.appendChild(second);
-        chattext.appendChild(first);   
+        chattext.appendChild(first);
+        chat.scrollTop = chat.scrollHeight;
     });
 }
 
@@ -36,6 +38,7 @@ fetch('http://localhost:8080/home/data', {
                 second.appendChild(third);
                 first.appendChild(second);
                 chattext.appendChild(first);
+                chat.scrollTop = chat.scrollHeight;
             });
             socket = io();
             listen();
@@ -83,6 +86,7 @@ chatinput.addEventListener("keypress", (e) => {
                 second.appendChild(third);
                 first.appendChild(second);
                 chattext.appendChild(first);
+                chat.scrollTop = chat.scrollHeight;
                 chatinput.value = "";
                 if(chatinput.placeholder != "...") {
                     chatinput.placeholder = "...";
