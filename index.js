@@ -4,7 +4,6 @@ import express from 'express'
 import session from 'express-session'
 import MySQLSession from 'express-mysql-session'
 import {v4} from 'uuid'
-import path from 'path'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { createServer } from "http";
@@ -13,27 +12,11 @@ const MySQLStore = MySQLSession(session);
 
 import usersRoutes from './routes/users.js'
 import homeRoutes from './routes/home.js'
+
 const app = express()
-const port = process.env.PORT || 8080;
-
-app.disable('x-powered-by');
-
+const port = process.env.PORT || 8000;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {});
-
-io.on("connection", (socket) => {
-    socket.on('message_in', (message) => {
-        socket.broadcast.emit('message_out', message);
-    });
-    socket.on('logout', () => {
-        socket.disconnect();
-    });
-});
-
-
-app.use(helmet())
-
-const __dirname = path.resolve();
 
 const options = {
     host: process.env.DB_HOST,
@@ -41,7 +24,7 @@ const options = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     clearExpired: true,
-    checkExpirationInterval: 1000 * 60, /* 1 minute */
+    checkExpirationInterval: 1000 * 60 * 30, /* 30 minutes */
 };
 var sessionStore = new MySQLStore(options);
 
@@ -60,18 +43,29 @@ app.use(session({
         sameSite: true
     }
 }));
-    
+
 app.use(express.json({limit: '200b'}));
+app.use(helmet())
+app.disable('x-powered-by');
 
 const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 150, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+	max: 150, // Limit each IP to 150 requests per `window` (here, per 15 minutes)
 	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })
 
 // Apply the rate limiting middleware to all requests
 app.use(limiter)
+
+io.on("connection", (socket) => {
+    socket.on('message_in', (message) => {
+        socket.broadcast.emit('message_out', message);
+    });
+    socket.on('logout', () => {
+        socket.disconnect();
+    });
+});
 
 app.use('/users', usersRoutes);
 
