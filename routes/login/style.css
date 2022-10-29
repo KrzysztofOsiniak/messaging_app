@@ -55,15 +55,28 @@ body {
 	text-indent: 10px;
 	border-radius: 25px;
 }
-@media (min-width: 550px) and (max-width: 1200px) {
+@media (min-width: 650px) and (max-width: 1200px) {
 	.container {
 		width: 50vw;
 		margin-left: 25vw;
 	}
 }
-@media (max-width: 550px) {
+@media (max-width: 650px) {
 	.container {
 		width: 75vw;
 		margin-left: 12.5vw;
+	}
+	#password {
+		width: 50%;
+		margin-left: 25%;
+	}
+	#name {
+		width: 50%;
+		margin-left: 25%;
+		margin-top: 10%;
+	}
+	.send {
+		width: 65%;
+		margin-left: 17.5%;
 	}
 }
