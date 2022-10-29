@@ -1,6 +1,5 @@
 const login = document.querySelector('.login');
 const signup = document.querySelector('.signup');
-const chattext = document.querySelector('.chattext');
 const chatinput = document.querySelector('.chatinput');
 
 
@@ -15,6 +14,6 @@ signup.addEventListener('click', () => {
 chatinput.addEventListener("keypress", (e) => {
     if(e.key === 'Enter') {
         e.preventDefault();
-        chatinput.textContent = "";
+        chatinput.value = "";
       }
 });

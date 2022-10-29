@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Homepage</title>
     <link href="style.css" rel="stylesheet">
@@ -10,12 +10,15 @@
     <link rel="icon" href="favicon.ico">
 </head>
 <body>
+    <header>
+        <h1 id="header">Chatting app</h1>
+        <button class="login"><h1 class="optiontext">Log in</h1></button> 
+        <button class="signup"><h1 class="optiontext">Sign up</h1></button>
+    </header>
     <h1 class="name">Not logged in</h1>
-    <h1 class="login hover">Log in</h1>
-    <h1 class="signup hover">Sign up</h1>
     <div class="chatbox">
-        <div class="chat"><div><h2 class="chattext"></h2></div></div>
-        <input class="chatinput" placeholder="Log in to type in chat"></input>
+        <div class="chat"></div>
+        <input class="chatinput" placeholder="Log in to see and type in chat"></input>
     </div>
 </body>
 </html>

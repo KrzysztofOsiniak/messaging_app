@@ -14,7 +14,7 @@ import usersRoutes from './routes/users.js'
 import homeRoutes from './routes/home.js'
 
 const app = express()
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 8080;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {});
 
@@ -49,8 +49,8 @@ app.use(helmet())
 app.disable('x-powered-by');
 
 const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 150, // Limit each IP to 150 requests per `window` (here, per 15 minutes)
+	windowMs: 2 * 60 * 1000, // 2 minutes
+	max: 50, // Limit each IP to 50 requests per `window` (here, per 2 minutes)
 	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })

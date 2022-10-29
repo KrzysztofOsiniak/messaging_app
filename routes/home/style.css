@@ -1,61 +1,201 @@
+* {
+    box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+    font-family: IBM Plex Pans;
+}
 body {
-    background: cornflowerblue;
+    background-color: #282e3a;
+}
+header {
+    width: 100%;
+    height: 7vh;
+    background-color: #122c5e;
+    display: flex;
+    align-items: center;
+}
+#header {
+    display: inline-block;
+    margin-left: 45%;
 }
 .login {
+    background-color: #154395;
+    width: 10%;
+    height: 50%;
+    border-radius: 50px;
     cursor: pointer;
+    outline: none;
+    border: none;
+    margin-left: 15%;
 }
 .signup {
+    background-color: #154395;
+    width: 10%;
+    height: 50%;
+    border-radius: 50px;
     cursor: pointer;
+    outline: none;
+    border: none;
+    margin-left: 2%;
 }
-.hover {
-    background: seashell;
-    opacity: 0.8;
+.optiontext {
+    font-size: 22px;
 }
-.hover:hover {
-    opacity: 1;
+.login:hover {
+    background-color: #284e93;
+}
+.signup:hover {
+    background-color: #284e93;
+}
+.name {
+    margin-top: 12vh;
 }
 .chatbox {
-    background: cornflowerblue;
-    width: 35vw;
+    width: 40vw;
     height: 50vh;
-    background: rgb(20, 20, 20);
-    margin-left: 32.5vw;
-    margin-top: 15vh;
+    background-color: rgb(20, 20, 20);
+    margin-left: 30vw;
+    margin-top: 1vh;
+    border-radius: 25px;
 }
 .chat {
     width: 100%;
     height: 90%;
-    background: darkcyan;
+    background-color: #154395;
     overflow-wrap: break-word;
     overflow: auto;
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
 }
 .chatinput {
-    background: rgba(255, 255, 255, 0.8);
-    -webkit-appearance: none;
+    background-color: rgba(255, 255, 255, 0.8);
     outline: none;
     border: none;
-    padding: 0 0 0 0;
     width: 100%;
     height: 10%;
     font-size: 20px;
     text-indent: 10px;
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
 }
 .chatinput:focus {
-    background: rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255);
 }
 .chatinput:hover {
-    background: rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255);
 }
 h1 {
     text-align: center;
+    color: #fff;
 }
 .chattext {
-    margin: 0;
     font-size: 25px;
 }
-@media (max-width: 1000px) {
+@media (max-width: 350px) {
+    #header {
+        margin-left: 2%;
+        font-size: 25px;
+    }
+    .login {
+        width: 25%;
+        height: 80%;
+        margin-left: 5%;
+    }
+    .signup {
+        width: 25%;
+        height: 80%;
+    }
     .chatbox {
-        width: 85vw;
-        margin-left: 7.5vw;
+        width: 80vw;
+        margin-left: 10vw;
+    }
+    .optiontext {
+        font-size: 20px;
+    }
+}
+@media (min-width: 350px) and (max-width: 550px) {
+    #header {
+        margin-left: 2%;
+        font-size: 25px;
+    }
+    .login {
+        width: 25%;
+        height: 80%;
+        margin-left: 5%;
+    }
+    .signup {
+        width: 25%;
+        height: 80%;
+    }
+    .chatbox {
+        width: 80vw;
+        margin-left: 10vw;
+    }
+}
+@media (min-width: 550px) and (max-width: 800px) {
+    #header {
+        margin-left: 10%;
+    }
+    .login {
+        width: 20%;
+    }
+    .signup {
+        width: 20%;
+    }
+    .chatbox {
+        width: 80vw;
+        margin-left: 10vw;
+    }
+}
+@media (min-width: 800px) and (max-width: 1050px) {
+    .chatbox {
+        width: 60vw;
+        margin-left: 20vw;
+    }
+    #header {
+        margin-left: 20%;
+    }
+    .login {
+        width: 20%;
+    }
+    .signup {
+        width: 20%;
+    }
+}
+@media (min-width: 1050px) and (max-width: 1250px) {
+    .chatbox {
+        width: 60vw;
+        margin-left: 20vw;
+    }
+}
+@media (min-width: 1250px) and (max-width: 1650px) {
+    .chatbox {
+        width: 45vw;
+        margin-left: 27.5vw;
+    }
+}
+@media (min-height: 500px) and (max-height: 800px) {
+    .login {
+        height: 70%;
+    }
+    .signup {
+        height: 70%;
+    }
+}
+@media (max-height: 500px) {
+    header {
+        height: 14vh;
+    }
+    .login {
+        height: 70%;
+    }
+    .signup {
+        height: 70%;
+    }
+    .chatbox {
+        height: 70vh;
+    }
+    .name {
+        margin-top: 3vh;
     }
 }
