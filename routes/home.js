@@ -5,23 +5,20 @@ const __dirname = path.resolve();
 const router = express.Router();
 let chatmessages = [];
 
-router.use('/', express.static('routes/home'));
-router.use('/', express.static('routes/home_logged'));
+router.use('/', express.static('frontend/dist'));
 
 router.get('/', (req, res) => {
-    if(req.session.logged) {
-        res.sendFile(path.resolve(__dirname, 'routes/home_logged/main2.html'));
-    } else {
-        res.sendFile(path.resolve(__dirname, 'routes/home/main.html'));
-    }
+    res.sendFile(path.resolve(__dirname, 'frontend/dist/index.html'));
 });
 
 router.get('/data', (req, res) => {
-    if(req.session.logged) {
+    res.status(200).send({logged: req.session.logged});
+    console.log('ok')
+    /*if(req.session.logged) {
         res.send({username: req.session.username, status: 200, text: chatmessages});
     } else {
         res.send({status: 401});
-    }
+    }*/
 });
 
 router.post('/chattext', (req, res) => {

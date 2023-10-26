@@ -9,6 +9,9 @@ import rateLimit from 'express-rate-limit'
 import { createServer } from "http";
 import { Server } from "socket.io";
 const MySQLStore = MySQLSession(session);
+import path from 'path'
+
+const __dirname = path.resolve();
 
 import usersRoutes from './routes/users.js'
 import homeRoutes from './routes/home.js'
@@ -71,8 +74,10 @@ app.use('/users', usersRoutes);
 
 app.use('/home', homeRoutes);
 
-app.get('/*', (req, res) => {
-    res.redirect('/home');
+app.use(express.static('frontend/dist'));
+
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'frontend/dist/index.html'));
 });
 
 httpServer.listen(port, () => console.log(`running on ${port}`));
