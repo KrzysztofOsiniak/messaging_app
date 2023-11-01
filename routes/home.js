@@ -11,14 +11,17 @@ router.get('/', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'frontend/dist/index.html'));
 });
 
+/* fix abundant {status: x} */
+
 router.get('/data', (req, res) => {
-    res.status(200).send({logged: req.session.logged});
-    console.log('ok')
-    /*if(req.session.logged) {
-        res.send({username: req.session.username, status: 200, text: chatmessages});
+    /*setTimeout(() => {
+        res.status(200).send({logged: req.session.logged});
+    }, 3000);*/
+    if(req.session.logged) {
+        res.send({username: req.session.username, status: 200, text: chatmessages, logged: req.session.logged});
     } else {
-        res.send({status: 401});
-    }*/
+        res.send({status: 401, logged: 0});
+    }
 });
 
 router.post('/chattext', (req, res) => {
