@@ -4,13 +4,6 @@ import path from 'path'
 const __dirname = path.resolve();
 
 
-export const getlogin = (req, res) => {
-    if(req.session.logged) {
-        res.redirect("http://localhost:8080/home")
-        return
-    }
-    res.sendFile(path.resolve(__dirname, './routes/login/main.html'))
-};
 
 export const postlogin = async (req, res) => {
     if(req.session.pending) {
@@ -78,14 +71,6 @@ export const postlogin = async (req, res) => {
     }, 350);
 };
 
-
-export const getsignup = (req, res) => {
-    if(req.session.logged) {
-        res.redirect(process.env.HOMEPAGE)
-        return
-    }
-    res.sendFile(path.resolve(__dirname, './routes/signup/main.html'))
-};
 
 export const postsignup = (req, res) => {
     if(req.session.pending) {

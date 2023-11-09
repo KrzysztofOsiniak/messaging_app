@@ -47,7 +47,7 @@ router.post('/chattext', (req, res) => {
 router.post('/logout', (req, res) => {
     if(req.session.logged) {
         req.session.destroy();
-        res.status(200).redirect('back');
+        res.status(200).send({});
     } else {
         res.sendStatus(401);
     }

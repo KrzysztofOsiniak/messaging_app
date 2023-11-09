@@ -80,4 +80,4 @@ app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'frontend/dist/index.html'));
 });
 
-httpServer.listen(port, () => console.log(`running on ${port}`));
+httpServer.listen(port, () => console.log(`running on http://localhost:${port}`));

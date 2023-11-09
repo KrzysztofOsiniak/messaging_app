@@ -6,7 +6,7 @@
 body {
     background-color: #282e3a;
 }
-.not_logged {
+.chatNest {
     header {
         width: 100%;
         height: 7vh;
@@ -18,17 +18,17 @@ body {
         display: inline-block;
         margin-left: 45%;
     }
-    .login {
+    .select {
         background-color: #154395;
-        width: 10%;
+        width: 12%;
         height: 50%;
         border-radius: 50px;
         cursor: pointer;
         outline: none;
         border: none;
-        margin-left: 15%;
+        margin-left: 10%;
     }
-    .signup {
+    .logout {
         background-color: #154395;
         width: 10%;
         height: 50%;
@@ -41,14 +41,11 @@ body {
     .optiontext {
         font-size: 22px;
     }
-    .login:hover {
+    .logout:hover {
         background-color: #284e93;
     }
-    .signup:hover {
+    .select:hover {
         background-color: #284e93;
-    }
-    .name {
-        margin-top: 12vh;
     }
     .chatbox {
         width: 40vw;
@@ -62,10 +59,14 @@ body {
         width: 100%;
         height: 90%;
         background-color: #154395;
-        overflow-wrap: break-word;
         overflow: auto;
         border-top-left-radius: 25px;
         border-top-right-radius: 25px;
+    }
+    .chatcontent {
+        padding-top: 5px;
+        line-break: anywhere;
+        overflow-wrap: break-word;
     }
     .chatinput {
         background-color: rgba(255, 255, 255, 0.8);
@@ -84,26 +85,34 @@ body {
     .chatinput:hover {
         background-color: rgb(255, 255, 255);
     }
+    .name {
+        margin-top: 12vh;
+        font-size: 30px;
+    }
     h1 {
         text-align: center;
         color: #fff;
+        margin: 0;
+    }
+    h2 {
+        color: #fff;
     }
     .chattext {
-        font-size: 25px;
+        margin: 0;
+        font-size: 23px;
+        padding: 2px 0px 2px 5px;
     }
-    @media (max-width: 350px) {
+    .chattext:hover {
+        background-color: #122c5e;
+    }
+    @media (max-width: 450px) {
         #header {
-            margin-left: 2%;
-            font-size: 25px;
+            display: none;
         }
-        .login {
-            width: 25%;
+        .logout {
+            width: 30%;
             height: 80%;
             margin-left: 5%;
-        }
-        .signup {
-            width: 25%;
-            height: 80%;
         }
         .chatbox {
             width: 80vw;
@@ -112,39 +121,52 @@ body {
         .optiontext {
             font-size: 20px;
         }
+        .select {
+            width: 40%;
+            height: 80%;
+            margin-left: 12.5%;
+        }
+        .chattext {
+            font-size: 20px;
+        }
     }
-    @media (min-width: 350px) and (max-width: 550px) {
+    @media (min-width: 450px) and (max-width: 550px) {
         #header {
-            margin-left: 2%;
+            margin-left: 1%;
             font-size: 25px;
         }
-        .login {
+        .logout {
             width: 25%;
             height: 80%;
-            margin-left: 5%;
-        }
-        .signup {
-            width: 25%;
-            height: 80%;
+            margin-left: 2%;
         }
         .chatbox {
             width: 80vw;
             margin-left: 10vw;
+        }
+        .select {
+            width: 35%;
+            height: 80%;
+            margin-left: 5%;
+        }
+        .chattext {
+            font-size: 20px;
         }
     }
     @media (min-width: 550px) and (max-width: 800px) {
         #header {
-            margin-left: 10%;
+            margin-left: 5%;
+            font-size: 25px;
         }
-        .login {
-            width: 20%;
-        }
-        .signup {
-            width: 20%;
+        .logout {
+            width: 25%;
         }
         .chatbox {
             width: 80vw;
             margin-left: 10vw;
+        }
+        .select {
+            width: 30%;
         }
     }
     @media (min-width: 800px) and (max-width: 1050px) {
@@ -153,13 +175,13 @@ body {
             margin-left: 20vw;
         }
         #header {
-            margin-left: 20%;
+            margin-left: 15%;
         }
-        .login {
+        .logout {
             width: 20%;
         }
-        .signup {
-            width: 20%;
+        .select {
+            width: 25%;
         }
     }
     @media (min-width: 1050px) and (max-width: 1250px) {
@@ -167,29 +189,38 @@ body {
             width: 60vw;
             margin-left: 20vw;
         }
+        .select {
+            width: 15%;
+        }
     }
     @media (min-width: 1250px) and (max-width: 1650px) {
         .chatbox {
             width: 45vw;
             margin-left: 27.5vw;
         }
+        .select {
+            width: 15%;
+        }
     }
     @media (min-height: 500px) and (max-height: 800px) {
-        .login {
+        .logout {
             height: 70%;
         }
-        .signup {
+        .select {
             height: 70%;
+        }
+        .chattext {
+            font-size: 20px;
         }
     }
     @media (max-height: 500px) {
         header {
             height: 14vh;
         }
-        .login {
+        .logout {
             height: 70%;
         }
-        .signup {
+        .select {
             height: 70%;
         }
         .chatbox {
@@ -197,6 +228,9 @@ body {
         }
         .name {
             margin-top: 3vh;
+        }
+        .chattext {
+            font-size: 20px;
         }
     }
 }
