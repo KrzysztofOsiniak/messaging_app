@@ -14,7 +14,7 @@ export async function loader() {
     if(!logged) {
         return redirect('/login')
     }
-    return {logged: logged, username: username};
+    return {username: username};
 }
 
 export default function Chat() {
