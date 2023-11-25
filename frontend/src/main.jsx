@@ -7,6 +7,22 @@ import Signup, { loader as signupLoader } from './Signup.jsx';
 
 
 const router = createBrowserRouter([
+  /*
+  {
+    path: "/channels",
+    element: <Chat />,
+    loader: chatLoader,
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: "/:channelId",
+        element: <Channel />,
+        errorElement: <ErrorPage />,
+        loader: channelLoader,
+      },
+    ],
+  },
+  */
   {
     path: "/",
     element: <Chat />,
