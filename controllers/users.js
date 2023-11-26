@@ -18,14 +18,14 @@ export const postlogin = async (req, res) => {
         const password = req.body.password;
         if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) ) {
             req.session.destroy()
-            res.status(400);
+            res.sendStatus(400);
             return
         }
         const user = await db.promise().execute(`SELECT * FROM USERS WHERE USERNAME = ?;`, [username])
         .catch(err => {
             console.error(err);
             req.session.destroy()
-            res.status(500);
+            res.sendStatus(500);
             return null
         });
         if(user === null) {
@@ -36,7 +36,7 @@ export const postlogin = async (req, res) => {
             .catch(err => {
                 console.error(err);
                 req.session.destroy()
-                res.status(500);
+                res.sendStatus(500);
                 return null
             });
             if(hash === null) {
@@ -49,7 +49,7 @@ export const postlogin = async (req, res) => {
             .catch(err => {
                 console.error(err);
                 req.session.destroy()
-                res.status(500);
+                res.sendStatus(500);
                 return null
             });
             if(result === null) {
@@ -57,16 +57,16 @@ export const postlogin = async (req, res) => {
             }
             if(!result) {
                 req.session.destroy()
-                res.status(400);
+                res.sendStatus(400);
                 return
             } 
             req.session.logged = true;
             req.session.username = user[0][0].username;
             req.session.pending = false;
-            res.status(200).send(JSON.stringify({'username': req.session.username}))
+            res.status(200).send(JSON.stringify({'username': req.session.username, 'status': 200}))
         } else {
             req.session.destroy()
-            res.status(400);
+            res.sendStatus(400);
         }
     }, 350);
 };
@@ -86,14 +86,14 @@ export const postsignup = (req, res) => {
         const regtest = new RegExp(/[^!-~]/g);
         if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) || (regtest.test(username)) ) {
             req.session.destroy()
-            res.status(400);
+            res.sendStatus(400);
             return
         }
         let user = await db.promise().execute(`SELECT * FROM USERS WHERE USERNAME = ?;`, [username])
         .catch(err => {
             console.error(err);
             req.session.destroy()
-            res.status(500);
+            res.sendStatus(500);
             return null
         });
         if(user === null) {
@@ -101,7 +101,7 @@ export const postsignup = (req, res) => {
         }
         if(user[0][0]) {
             req.session.destroy()
-            res.status(400);
+            res.sendStatus(400);
         } else {
             const hash = await bcrypt.hash(password, 10)
             .then((hash) => {
@@ -110,7 +110,7 @@ export const postsignup = (req, res) => {
             .catch(err => {
                 console.error(err);
                 req.session.destroy()
-                res.status(500);
+                res.sendStatus(500);
                 return null
             });
             if(hash === null) {
@@ -120,14 +120,14 @@ export const postsignup = (req, res) => {
                 if(err) {
                     console.error(err);
                     req.session.destroy()
-                    res.status(500);
+                    res.sendStatus(500);
                     return
                 }
                 user = await db.promise().execute(`SELECT * FROM USERS WHERE USERNAME = ?;`, [username])
                 .catch(err => {
                     console.error(err);
                     req.session.destroy()
-                    res.status(500);
+                    res.sendStatus(500);
                     return null
                 });
                 if(user === null) {
@@ -136,7 +136,7 @@ export const postsignup = (req, res) => {
                 req.session.logged = true;
                 req.session.username = user[0][0].username;
                 req.session.pending = false;
-                res.status(200).send(JSON.stringify({'username': req.session.username}))
+                res.status(200).send(JSON.stringify({'username': req.session.username, status: 200}))
             });
         }
     }, 350);
