@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useRef } from "react";
 import { redirect, useNavigate } from "react-router-dom"
-import './Signup.scss'
+import styles from './styles/Signup.module.scss'
 
 export async function loader() {
     const { logged } = await fetch('http://localhost:8080/home/data', {
@@ -47,16 +47,14 @@ export default function Signup() {
     }
 
     return(
-        <div className="signupNest">
-            <div className="container">
-                <form className="login">
-                    <input ref={usernameRef} id="name" type="text" placeholder="Username"/>
-                    <input ref={passwordRef} id="password" type="password" placeholder="Password"/>
-                    <button className="send" onClick={(e) => handleOnClick(e)}>
+            <div className={styles.container}>
+                <form className={styles.login}>
+                    <input ref={usernameRef} id={styles.name} type="text" placeholder="Username"/>
+                    <input ref={passwordRef} id={styles.password} type="password" placeholder="Password"/>
+                    <button className={styles.send} onClick={(e) => handleOnClick(e)}>
                         <h1>Sign Up</h1>
                     </button>				
                 </form>
             </div>
-        </div>
     )
 }

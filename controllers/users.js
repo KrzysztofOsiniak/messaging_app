@@ -1,8 +1,5 @@
 import db from '../database.js'
 import bcrypt from 'bcrypt'
-import path from 'path'
-const __dirname = path.resolve();
-
 
 
 export const postlogin = async (req, res) => {
