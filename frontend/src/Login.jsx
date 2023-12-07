@@ -49,8 +49,8 @@ export default function Login() {
     return(
             <div className={styles.container}>
                 <form className={styles.login}>
-                    <input ref={usernameRef} id={styles.name} type="text" placeholder="Username"/>
-                    <input ref={passwordRef} id={styles.password} type="password" placeholder="Password"/>
+                    <input ref={usernameRef} className={styles.name} type="text" placeholder="Username"/>
+                    <input ref={passwordRef} className={styles.password} type="password" placeholder="Password"/>
                     <button className={styles.send} onClick={(e) => handleOnClick(e)}>
                         <h1>Log In</h1>
                     </button>				

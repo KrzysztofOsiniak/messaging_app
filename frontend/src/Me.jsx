@@ -17,14 +17,12 @@ export async function loader() {
 }
 
 export default function Me() {
-
     return(
-        <div className={styles.me}>
-            <nav id={styles.contacts}>
+        <div>
+            <nav className={styles.me}>
                 <h2>text</h2>
             </nav>
             <Outlet />
         </div>
     )
-
 }

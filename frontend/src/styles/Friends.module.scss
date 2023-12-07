@@ -1,3 +1,36 @@
 .friends {
     margin-left: 20vw; 
 }
+.optionsContainer {
+    width: 80vw;
+    height: 8vh;
+    display: inline-flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 2vw;
+    border-bottom: 2px solid #2b2d30;
+}
+.option {
+    outline: none;
+    border: none;
+    cursor: pointer;
+    background-color: #313337;
+    border-radius: 9%;
+    :hover {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 9%;
+    }
+}
+.optionText {
+    padding: 0.5em;
+    color: #fff;
+    font-size: 18px;
+}
+.friendsText {
+    margin-left: 3vw;
+    padding-right: 3vw;
+    border-right: 2px solid rgba(255,255,255,0.4);
+    font-weight: bold;
+    color: #fff;
+    font-size: 18px;
+}

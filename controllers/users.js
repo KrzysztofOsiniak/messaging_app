@@ -60,7 +60,7 @@ export const postlogin = async (req, res) => {
             req.session.logged = true;
             req.session.username = user[0][0].username;
             req.session.pending = false;
-            res.status(200).send(JSON.stringify({'username': req.session.username, 'status': 200}))
+            res.status(200).send({username: req.session.username, status: 200})
         } else {
             req.session.destroy()
             res.sendStatus(400);
@@ -133,7 +133,7 @@ export const postsignup = (req, res) => {
                 req.session.logged = true;
                 req.session.username = user[0][0].username;
                 req.session.pending = false;
-                res.status(200).send(JSON.stringify({'username': req.session.username, status: 200}))
+                res.status(200).send({username: req.session.username, status: 200})
             });
         }
     }, 350);

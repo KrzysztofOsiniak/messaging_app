@@ -8,7 +8,8 @@ export async function loader() {
         headers: {
             'Content-Type': 'application/json'
         }
-    });
+    })
+    .then(response => response.json())
     if(!logged) {
         return redirect('/login')
     }
@@ -19,24 +20,26 @@ export default function Friends() {
 
     return(
         <div className={styles.friends}>
-            <header >
-                <h2>Friends</h2>
-                <button>
-
+            <header className={styles.optionsContainer}>
+                <span className={styles.friendsText}>Friends</span>
+                <button className={styles.option}>
+                <span className={styles.optionText}>Online</span>
                 </button>
-                <button>
-
+                <button className={styles.option}>
+                <span className={styles.optionText}>All</span>
                 </button>
-                <button>
-
+                <button className={styles.option}>
+                <span className={styles.optionText}>Pending</span>
                 </button>
-                <button>
-
+                <button className={styles.option}>
+                <span className={styles.optionText}>Blocked</span>
                 </button>
-                <button>
-
+                <button className={styles.option}>
+                <span className={styles.optionText}>Add Friend</span>
                 </button>
             </header>
+            <div>
+            </div>
         </div>
     )
 }

@@ -19,8 +19,8 @@ export async function loader() {
 export default function Channels() {
 
     return(
-        <div className={styles.channels}>
-            <nav id={styles.channels}>
+        <div>
+            <nav className={styles.channels}>
                 <h2>text</h2>
             </nav>
             <Outlet />

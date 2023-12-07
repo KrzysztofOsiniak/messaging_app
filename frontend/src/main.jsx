@@ -5,77 +5,56 @@ import Channels, {loader as channelLoader} from './Channels.jsx';
 import Me, { loader as meLoader} from './Me.jsx'
 import Login, { loader as loginLoader } from './Login.jsx'
 import Signup, { loader as signupLoader } from './Signup.jsx';
+import Friends, { loader as friendsLoader } from './Friends.jsx';
 import ErrorPage from './ErrorPage.jsx';
 import './styles/index.scss'
 
 
 const router = createBrowserRouter([
-  /*
   {
-    path: "/channels",
-    element: <Channels />,
-    loader: chatLoader,
-    errorElement: <ErrorPage />,
-    children: [
-      {
-        path: "/channels/me",
-        element: <Me />,
-        errorElement: <ErrorPage />,
-        loader: meLoader,
-        children: [
-          {
-            path: "/",
-            element: <Friends />,
-            errorElement: <ErrorPage />,
-            loader: friendsLoader,
-          },
-          {
-            path: "/:directId",
-            element: <Direct />,
-            errorElement: <ErrorPage />,
-            loader: messagesLoader,
-          },
-      },
-      {
-        path: "/:serverId",
-        element: <Server />,
-        errorElement: <ErrorPage />,
-        loader: serverLoader,
-        children: [
-          {
-            path: "/:chatId",
-            element: <Chat />,
-            errorElement: <ErrorPage />,
-            loader: chatLoader,
-          },
-        ],
-      },
-    ],
-  },
-  */
-  {
-    path: "/channels",
+    path: "/channels/me",
     element: <Channels />,
     loader: channelLoader,
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "/channels/me",
+        path: "",
         element: <Me />,
         errorElement: <ErrorPage />,
         loader: meLoader,
+        children: [
+          {
+            path: "",
+            element: <Friends />,
+            errorElement: <ErrorPage />,
+            loader: friendsLoader,
+          }
+        ]
       }],
   },
   {
     path: "/login",
     element: <Login />,
     loader: loginLoader,
+    errorElement: <ErrorPage />
   },
   {
     path: "/signup",
     element: <Signup />,
     loader: signupLoader,
+    errorElement: <ErrorPage />
   },
+  {
+    path: "*",
+    element: <ErrorPage />,
+    loader: function loader() {
+      throw new Response("", {
+          status: 404,
+          statusText: "Not Found",
+        });
+    },
+    errorElement: <ErrorPage />
+  }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(

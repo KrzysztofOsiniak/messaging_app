@@ -80,4 +80,9 @@ app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'frontend/dist/index.html'));
 });
 
+app.use((err, req, res, next) => {
+    console.log(err)
+    res.status(500).send('Server Error');
+  });
+
 httpServer.listen(port, () => console.log(`running on http://localhost:${port}`));
