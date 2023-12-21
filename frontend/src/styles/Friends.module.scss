@@ -16,15 +16,17 @@
     cursor: pointer;
     background-color: #313337;
     border-radius: 9%;
-    :hover {
+    padding: 0.5em;
+    &:hover {
         background-color: rgba(255,255,255,0.1);
-        border-radius: 9%;
+        .optionText {
+            color: #fff;
+        } 
     }
 }
 .optionText {
-    padding: 0.5em;
-    color: #fff;
-    font-size: 18px;
+    color: rgba(255,255,255,0.85);
+    font-size: 1rem;
 }
 .friendsText {
     margin-left: 3vw;
@@ -32,5 +34,49 @@
     border-right: 2px solid rgba(255,255,255,0.4);
     font-weight: bold;
     color: #fff;
-    font-size: 18px;
+    font-size: 1rem;
+}
+.active {
+    background-color: rgba(255,255,255,0.1);
+    .optionText {
+        color: #fff;
+    }
+}
+.addFriendInput {
+    border-radius: 0.2vw;
+    outline: none;
+    border: none;
+    width: 18vw;
+    height: 3vh;
+    font-size: 1rem;
+    text-indent: 0.6em;
+}
+.addFriendForm {
+    margin-top: 30vh;
+    display: inline-flex;
+    justify-content: flex-start;
+}
+.addFriendButton {
+    width: 14vw;
+    height: 3vh;
+    border-radius: 0.2vw;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    background-color: rgb(16, 137, 48);
+    &:hover {
+        background-color: rgba(6, 127, 38,0.7);
+    }
+}
+.addFriendText {
+    font-size: 1rem;
+    color: #fff;
+}
+.friendsContainer {
+    width: 80vw;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+    gap: 2vh;
 }

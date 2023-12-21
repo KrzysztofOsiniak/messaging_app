@@ -36,7 +36,7 @@ export default function Login() {
         .then(response => response.json())
         .then(result => {
             if(result.status == 200) {
-                navigate('/channels');
+                navigate('/channels/me');
             } else if(result.status == 500) {
                 alert("unknown server error occurred");
             }
@@ -49,9 +49,9 @@ export default function Login() {
     return(
             <div className={styles.container}>
                 <form className={styles.login}>
-                    <input ref={usernameRef} className={styles.name} type="text" placeholder="Username"/>
+                    <input ref={usernameRef} className={styles.name} type="text" placeholder="Username" autoComplete="off"/>
                     <input ref={passwordRef} className={styles.password} type="password" placeholder="Password"/>
-                    <button className={styles.send} onClick={(e) => handleOnClick(e)}>
+                    <button className={styles.send} onClick={handleOnClick}>
                         <h1>Log In</h1>
                     </button>				
                 </form>
