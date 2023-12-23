@@ -1,14 +1,14 @@
 .friends {
-    margin-left: 20vw; 
+    margin-left: 48rem; 
 }
 .optionsContainer {
-    width: 80vw;
-    height: 8vh;
+    width: 100%;
+    height: 8rem;
     display: inline-flex;
     justify-content: flex-start;
     align-items: center;
-    gap: 2vw;
-    border-bottom: 2px solid #2b2d30;
+    gap: 3rem;
+    border-bottom: 0.2rem solid #2b2d30;
 }
 .option {
     outline: none;
@@ -16,40 +16,46 @@
     cursor: pointer;
     background-color: #313337;
     border-radius: 9%;
-    padding: 0.5em;
+    padding: 1rem;
     &:hover {
         background-color: rgba(255,255,255,0.1);
         .optionText {
             color: #fff;
         } 
     }
+    &:active {
+        background-color: rgba(255,255,255,0.05);
+    }
 }
 .optionText {
     color: rgba(255,255,255,0.85);
-    font-size: 1rem;
+    font-size: 1.8rem;
 }
 .friendsText {
-    margin-left: 3vw;
-    padding-right: 3vw;
-    border-right: 2px solid rgba(255,255,255,0.4);
+    margin-left: 4rem;
+    padding-right: 4rem;
+    border-right: 0.2rem solid rgba(255,255,255,0.4);
     font-weight: bold;
     color: #fff;
-    font-size: 1rem;
+    font-size: 1.8rem;
 }
 .active {
     background-color: rgba(255,255,255,0.1);
     .optionText {
         color: #fff;
     }
+    &:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
 }
 .addFriendInput {
     border-radius: 0.2vw;
     outline: none;
     border: none;
-    width: 18vw;
-    height: 3vh;
-    font-size: 1rem;
-    text-indent: 0.6em;
+    width: 36rem;
+    height: 3.6rem;
+    font-size: 1.8rem;
+    text-indent: 1.2rem;
 }
 .addFriendForm {
     margin-top: 30vh;
@@ -57,23 +63,26 @@
     justify-content: flex-start;
 }
 .addFriendButton {
-    width: 14vw;
-    height: 3vh;
+    width: 28rem;
+    height: 3.6rem;
     border-radius: 0.2vw;
     outline: none;
     border: none;
     cursor: pointer;
     background-color: rgb(16, 137, 48);
     &:hover {
-        background-color: rgba(6, 127, 38,0.7);
+        background-color: rgba(6, 127, 38,0.8);
+    }
+    &:active {
+        background-color: rgba(6, 127, 38,0.6);
     }
 }
 .addFriendText {
-    font-size: 1rem;
+    font-size: 1.8rem;
     color: #fff;
 }
 .friendsContainer {
-    width: 80vw;
+    width: 100%;
     display: flex;
     justify-content: flex-start;
     align-items: center;
