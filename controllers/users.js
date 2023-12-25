@@ -2,7 +2,7 @@ import db from '../database.js'
 import bcrypt from 'bcrypt'
 
 
-export const postlogin = async (req, res) => {
+export const postLogin = (req, res) => {
     if(req.session.pending) {
         return
     }
@@ -18,7 +18,7 @@ export const postlogin = async (req, res) => {
             res.sendStatus(400);
             return
         }
-        const user = await db.promise().execute(`SELECT * FROM USERS WHERE USERNAME = ?;`, [username])
+        const user = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [username])
         .catch(err => {
             console.error(err);
             req.session.destroy();
@@ -57,11 +57,11 @@ export const postlogin = async (req, res) => {
         req.session.username = username;
         req.session.pending = false;
         res.status(200).send({username: req.session.username, status: 200})
-    }, 350)
+    }, 200)
 };
 
 
-export const postsignup = (req, res) => {
+export const postSignup = (req, res) => {
     if(req.session.pending) {
         return
     }
@@ -74,14 +74,14 @@ export const postsignup = (req, res) => {
         const password = req.body.password;
         const regtest = new RegExp(/[^!-~]/g);
         if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) || (regtest.test(username)) ) {
-            req.session.destroy()
+            req.session.destroy();
             res.sendStatus(400);
             return
         }
-        let user = await db.promise().execute(`SELECT * FROM USERS WHERE USERNAME = ?;`, [username])
+        const user = await db.promise().execute(`SELECT * FROM users WHERE USERNAME = ?;`, [username])
         .catch(err => {
             console.error(err);
-            req.session.destroy()
+            req.session.destroy();
             res.sendStatus(500);
             return null
         });
@@ -89,7 +89,7 @@ export const postsignup = (req, res) => {
             return
         }
         if(user[0][0]) {
-            req.session.destroy()
+            req.session.destroy();
             res.sendStatus(400);
             return
         }
@@ -99,17 +99,17 @@ export const postsignup = (req, res) => {
         })
         .catch(err => {
             console.error(err);
-            req.session.destroy()
+            req.session.destroy();
             res.sendStatus(500);
             return null
         });
         if(hash === null) {
             return
         }
-        const result = await db.promise().execute(`INSERT INTO USERS(username, password) VALUES(?, ?);`, [username, hash])
+        const result = await db.promise().execute(`INSERT INTO users(username, password) VALUES(?, ?);`, [username, hash])
         .catch(err => {
             console.error(err);
-            req.session.destroy()
+            req.session.destroy();
             res.sendStatus(500);
             return null
         });
@@ -121,5 +121,42 @@ export const postsignup = (req, res) => {
         req.session.username = username;
         req.session.pending = false;
         res.status(200).send({username: req.session.username, status: 200})
-    }, 350);
+    }, 200);
 };
+
+
+export const postAddFriend = async (req, res) => {
+    if(req.session.pending) {
+        return
+    }
+    if(req.session.logged) {
+        return
+    }
+    req.session.pending = true;
+    const username = req.body.username;
+    const user = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [username])
+    .catch(err => {
+        console.error(err);
+        req.session.pending = false;
+        res.sendStatus(500);
+        return null
+    });
+    if(user === null) {
+        return
+    }
+    if(!user[0][0]) {
+        req.session.pending = false;
+        res.sendStatus(400);
+        return
+    }
+    const friend = await db.promise().execute('select * from friends where username = ?', [username])
+    .catch(err => {
+        console.error(err);
+        req.session.pending = false;
+        res.sendStatus(500);
+        return null
+    });
+    if(friend === null) {
+        return
+    }
+}

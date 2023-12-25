@@ -1,13 +1,14 @@
 import express from 'express'
 
-import {postlogin, postsignup} from '../controllers/users.js'
+import {postAddFriend, postLogin, postSignup} from '../controllers/users.js'
 
 const router = express.Router();
 
 
-router.post('/login', postlogin);
+router.post('/login', postLogin);
 
-router.post('/signup', postsignup);
+router.post('/signup', postSignup);
 
+router.post('/addfriend', postAddFriend);
 
 export default router
