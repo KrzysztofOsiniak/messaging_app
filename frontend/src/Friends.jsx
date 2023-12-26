@@ -10,7 +10,7 @@ export async function loader() {
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
+    .then(response => response.json());
     if(!logged) {
         return redirect('/login')
     }
@@ -22,9 +22,23 @@ export default function Friends() {
     
     const text = useRef('');
 
-    function handleAdd(e) {
+    async function handleAdd(e) {
         e.preventDefault();
-        text.value = '';
+        const { status } = await fetch('http://localhost:8080/users/addfriend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                friendName: text.current.value
+            })
+        })
+        .then(response => response.json());
+        if(status == 200) {
+            text.value = 'success';
+        } else {
+            text.value = '';
+        }
     }
 
     function Add() {
