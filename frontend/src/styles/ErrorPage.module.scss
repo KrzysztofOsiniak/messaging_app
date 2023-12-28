@@ -1,4 +1,11 @@
 .errorPage {
-    margin-top: 49vh;
-    margin-left: 45vw;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.errorFont {
+    font-size: 3rem;
+    color: #fff;
 }

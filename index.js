@@ -14,7 +14,6 @@ import path from 'path'
 const __dirname = path.resolve();
 
 import usersRoutes from './routes/users.js'
-import homeRoutes from './routes/home.js'
 
 const app = express()
 const port = process.env.PORT || 8080;
@@ -71,8 +70,6 @@ io.on("connection", (socket) => {
 });
 
 app.use('/users', usersRoutes);
-
-app.use('/home', homeRoutes);
 
 app.use(express.static('frontend/dist'));
 

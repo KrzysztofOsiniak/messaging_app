@@ -6,9 +6,9 @@ export default function ErrorPage() {
     console.error(error)
     return(
         <div className={styles.errorPage}>
-            <h2>
-                {error.statusText || error.message}
-            </h2>
-        </div>
+            <span className={styles.errorFont}>
+                    {error.statusText || error.message}
+            </span>
+        </div>    
     )
 }

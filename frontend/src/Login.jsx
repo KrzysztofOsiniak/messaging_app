@@ -1,10 +1,9 @@
-/* eslint-disable react-refresh/only-export-components */
 import { useRef } from "react";
 import { redirect, useNavigate } from "react-router-dom"
 import styles from './styles/Login.module.scss'
 
 export async function loader() {
-    const { logged } = await fetch('http://localhost:8080/home/data', {
+    const { logged } = await fetch('http://localhost:8080/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'

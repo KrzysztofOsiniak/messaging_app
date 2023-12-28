@@ -1,9 +1,8 @@
-/* eslint-disable react-refresh/only-export-components */
 import { Outlet, redirect } from "react-router-dom";
 import styles from './styles/Channels.module.scss'
 
 export async function loader() {
-    const { logged, username} = await fetch('http://localhost:8080/home/data', {
+    const { logged } = await fetch('http://localhost:8080/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -13,7 +12,7 @@ export async function loader() {
     if(!logged) {
         return redirect('/login')
     }
-    return {username: username}
+    return 0
 }
 
 export default function Channels() {
