@@ -7,7 +7,7 @@ export async function loader() {
 
 export default function Me() {
     return(
-        <div>
+        <div className={styles.flexWrapper}>
             <nav className={styles.me}>
                 <h2>text</h2>
             </nav>

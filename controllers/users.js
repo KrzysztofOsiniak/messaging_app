@@ -153,15 +153,21 @@ export const postAddFriend = async (req, res) => {
     const username = req.session.username
     const friendName = req.body.friendName;
 
+    if(friendName == username) {
+        req.session.pending = false;
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
+        return
+    }
+
     if( (friendName.length > 19) || (!friendName.length) ) {
         req.session.pending = false;
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
     if(pendingRequestOnUsers[friendName] == username) {
         req.session.pending = false;
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
@@ -173,7 +179,7 @@ export const postAddFriend = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friendExists === null) {
@@ -183,7 +189,7 @@ export const postAddFriend = async (req, res) => {
     if(!friendExists[0][0]) {
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
 
@@ -192,7 +198,7 @@ export const postAddFriend = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(userStatus === null) {
@@ -204,7 +210,7 @@ export const postAddFriend = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friendStatus === null) {
@@ -217,7 +223,7 @@ export const postAddFriend = async (req, res) => {
             console.error(err);
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
         if(request === null) {
@@ -225,7 +231,7 @@ export const postAddFriend = async (req, res) => {
         }
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(200);
+        res.status(200).send({status: 200, message: 'Friend Request Sent'});
         return
     }
 
@@ -233,7 +239,7 @@ export const postAddFriend = async (req, res) => {
         if(userStatus[0][0].status == 'friend' || userStatus[0][0].status == 'blocked') {
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'User Already In Friend/Blocked List'});
             return
         }
 
@@ -243,7 +249,7 @@ export const postAddFriend = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(usersFriend === null) {
@@ -255,7 +261,7 @@ export const postAddFriend = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(userUpdate === null) {
@@ -264,7 +270,7 @@ export const postAddFriend = async (req, res) => {
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(200);
+            res.status(200).send({status: 200, message: 'Friend Request Accepted'});
             return
         }
     }
@@ -273,10 +279,13 @@ export const postAddFriend = async (req, res) => {
         if(friendStatus[0][0].status == 'pending' || friendStatus[0][0].status == 'blocked') {
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'Friend Request Already Sent'});
             return
         }
     }
+    req.session.pending = false;
+    pendingRequestOnUsers[username] = '';
+    res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postDeclineFriend = async (req, res) => {
@@ -290,15 +299,21 @@ export const postDeclineFriend = async (req, res) => {
     const username = req.session.username
     const friendName = req.body.friendName;
 
+    if(friendName == username) {
+        req.session.pending = false;
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
+        return
+    }
+
     if( (friendName.length > 19) || (!friendName.length) ) {
         req.session.pending = false;
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
     if(pendingRequestOnUsers[friendName] == username) {
         req.session.pending = false;
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
@@ -310,7 +325,7 @@ export const postDeclineFriend = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friendExists === null) {
@@ -320,7 +335,7 @@ export const postDeclineFriend = async (req, res) => {
     if(!friendExists[0][0]) {
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
 
@@ -329,7 +344,7 @@ export const postDeclineFriend = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(userStatus === null) {
@@ -339,7 +354,7 @@ export const postDeclineFriend = async (req, res) => {
     if(!userStatus[0][0]) {
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'No Friend Request From User'});
         return
     }
     
@@ -349,7 +364,7 @@ export const postDeclineFriend = async (req, res) => {
             console.error(err);
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
         if(removeRequest === null) {
@@ -358,9 +373,12 @@ export const postDeclineFriend = async (req, res) => {
 
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(200);
+        res.status(200).send({status: 200, message: 'Friend Request Removed'});
         return
     }
+    req.session.pending = false;
+    pendingRequestOnUsers[username] = '';
+    res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postRemoveFriend = async (req, res) => {
@@ -374,15 +392,21 @@ export const postRemoveFriend = async (req, res) => {
     const username = req.session.username
     const friendName = req.body.friendName;
 
+    if(friendName == username) {
+        req.session.pending = false;
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
+        return
+    }
+
     if( (friendName.length > 19) || (!friendName.length) ) {
         req.session.pending = false;
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
     if(pendingRequestOnUsers[friendName] == username) {
         req.session.pending = false;
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
@@ -394,7 +418,7 @@ export const postRemoveFriend = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friendExists === null) {
@@ -404,7 +428,7 @@ export const postRemoveFriend = async (req, res) => {
     if(!friendExists[0][0]) {
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
 
@@ -413,7 +437,7 @@ export const postRemoveFriend = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(userStatus === null) {
@@ -423,7 +447,7 @@ export const postRemoveFriend = async (req, res) => {
     if(!userStatus[0][0]) {
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'User Not In Friend List'});
         return
     }
     
@@ -433,7 +457,7 @@ export const postRemoveFriend = async (req, res) => {
             console.error(err);
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
         if(removeFriendsUser === null) {
@@ -445,7 +469,7 @@ export const postRemoveFriend = async (req, res) => {
             console.error(err);
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
         if(removeUsersFriend === null) {
@@ -454,9 +478,12 @@ export const postRemoveFriend = async (req, res) => {
 
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(200);
+        res.status(200).send({status: 200, message: 'Removed From Friend List'});
         return
     }
+    req.session.pending = false;
+    pendingRequestOnUsers[username] = '';
+    res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postBlock = async (req, res) => {
@@ -470,15 +497,21 @@ export const postBlock = async (req, res) => {
     const username = req.session.username
     const friendName = req.body.friendName;
 
+    if(friendName == username) {
+        req.session.pending = false;
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
+        return
+    }
+
     if( (friendName.length > 19) || (!friendName.length) ) {
         req.session.pending = false;
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
     if(pendingRequestOnUsers[friendName] == username) {
         req.session.pending = false;
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
@@ -490,7 +523,7 @@ export const postBlock = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friendExists === null) {
@@ -500,7 +533,7 @@ export const postBlock = async (req, res) => {
     if(!friendExists[0][0]) {
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
 
@@ -509,7 +542,7 @@ export const postBlock = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(userStatus === null) {
@@ -521,7 +554,7 @@ export const postBlock = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friendStatus === null) {
@@ -534,7 +567,7 @@ export const postBlock = async (req, res) => {
             console.error(err);
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
         if(request === null) {
@@ -542,7 +575,7 @@ export const postBlock = async (req, res) => {
         }
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(200);
+        res.status(200).send({status: 200, message: 'User Blocked'});
         return
     }
 
@@ -550,7 +583,7 @@ export const postBlock = async (req, res) => {
         if(userStatus[0][0].status == 'blocked') {
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'User Already Blocked'});
             return
         }
 
@@ -560,7 +593,7 @@ export const postBlock = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(userUpdate === null) {
@@ -568,7 +601,7 @@ export const postBlock = async (req, res) => {
             }
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(200);
+            res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
 
@@ -578,7 +611,7 @@ export const postBlock = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(usersFriend === null) {
@@ -590,7 +623,7 @@ export const postBlock = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(userUpdate === null) {
@@ -599,7 +632,7 @@ export const postBlock = async (req, res) => {
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(200);
+            res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
     }
@@ -611,7 +644,7 @@ export const postBlock = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(request === null) {
@@ -619,7 +652,7 @@ export const postBlock = async (req, res) => {
             }
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(200);
+            res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
 
@@ -629,7 +662,7 @@ export const postBlock = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(usersFriend === null) {
@@ -641,7 +674,7 @@ export const postBlock = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(request === null) {
@@ -650,10 +683,13 @@ export const postBlock = async (req, res) => {
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(200);
+            res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
     }
+    req.session.pending = false;
+    pendingRequestOnUsers[username] = '';
+    res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postUnBlock = async (req, res) => {
@@ -667,15 +703,21 @@ export const postUnBlock = async (req, res) => {
     const username = req.session.username
     const friendName = req.body.friendName;
 
+    if(friendName == username) {
+        req.session.pending = false;
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
+        return
+    }
+
     if( (friendName.length > 19) || (!friendName.length) ) {
         req.session.pending = false;
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
     if(pendingRequestOnUsers[friendName] == username) {
         req.session.pending = false;
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
@@ -687,7 +729,7 @@ export const postUnBlock = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friendExists === null) {
@@ -697,7 +739,7 @@ export const postUnBlock = async (req, res) => {
     if(!friendExists[0][0]) {
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(400);
+        res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
     
@@ -706,7 +748,7 @@ export const postUnBlock = async (req, res) => {
         console.error(err);
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(userStatus === null) {
@@ -720,7 +762,7 @@ export const postUnBlock = async (req, res) => {
                 console.error(err);
                 req.session.pending = false;
                 pendingRequestOnUsers[username] = '';
-                res.sendStatus(500);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
             if(removeBlock === null) {
@@ -728,14 +770,14 @@ export const postUnBlock = async (req, res) => {
             }
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
-            res.sendStatus(200);
+            res.status(200).send({status: 200, message: 'User Unblocked'});
             return
         }
     }
 
     req.session.pending = false;
     pendingRequestOnUsers[username] = '';
-    res.sendStatus(400);
+    res.status(400).send({status: 400, message: 'User Not Blocked'});
 }
 
 export const getFriends = async (req, res) => {
@@ -746,7 +788,7 @@ export const getFriends = async (req, res) => {
     const friends = await db.promise().execute(`select friendname, status from friends where username = ?;`, [req.session.username])
     .catch(err => {
         console.error(err);
-        res.sendStatus(500);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
     if(friends === null) {

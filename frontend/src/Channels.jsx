@@ -18,7 +18,7 @@ export async function loader() {
 export default function Channels() {
 
     return(
-        <div>
+        <div className={styles.flexWrapper}>
             <nav className={styles.channels}>
                 <h2>text</h2>
             </nav>
