@@ -276,10 +276,16 @@ export const postAddFriend = async (req, res) => {
     }
 
     if(friendStatus[0][0]) {
-        if(friendStatus[0][0].status == 'pending' || friendStatus[0][0].status == 'blocked') {
+        if(friendStatus[0][0].status == 'pending') {
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
             res.status(400).send({status: 400, message: 'Friend Request Already Sent'});
+            return
+        }
+        if(friendStatus[0][0].status == 'blocked') {
+            req.session.pending = false;
+            pendingRequestOnUsers[username] = '';
+            res.status(400).send({status: 400, message: 'User Has Blocked You'});
             return
         }
     }
