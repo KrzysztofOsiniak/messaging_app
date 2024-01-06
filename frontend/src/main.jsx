@@ -21,13 +21,11 @@ const router = createBrowserRouter([
         path: "",
         element: <Me />,
         errorElement: <ErrorPage />,
-        loader: meLoader,
         children: [
           {
             path: "",
             element: <Friends />,
             errorElement: <ErrorPage />,
-            loader: friendsLoader,
           }
         ]
       }],

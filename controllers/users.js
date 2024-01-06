@@ -3,9 +3,47 @@ import bcrypt from 'bcrypt'
 
 let pendingRequestOnUsers = {};
 
+let onlineUsers = [];
+
+let sockets = [];
+
+function io(io) {
+    io.on('connection', (socket) => {
+        socket.on('addOnline', (user) => {
+            onlineUsers.push(user);
+            socket.username = user;
+            sockets.push(socket);
+        });
+        socket.on('disconnect', () => {
+            onlineUsers = onlineUsers.filter(user => user != socket.username);
+            sockets = sockets.filter(user => user.username != socket.username);
+        });
+    });
+}
+
+
+let connectionStarted = 0;
+function connect() {
+    setTimeout(() => {
+        if(connectionStarted) {
+            return
+        }
+        if(global.io) {
+            connectionStarted = 1;
+            const connection = global.io;
+            io(connection);
+        }
+        else {
+            connect()
+        }
+    }, 1000);
+}
+connect();
+
+
 export const getLogged = (req, res) => {
     if(req.session.logged) {
-        res.status(200).send({logged: 1});
+        res.status(200).send({logged: 1, username: req.session.username});
         return
     }
     res.status(401).send({logged: 0});
@@ -150,7 +188,7 @@ export const postAddFriend = async (req, res) => {
         return
     }
 
-    const username = req.session.username
+    const username = req.session.username;
     const friendName = req.body.friendName;
 
     if(friendName == username) {
@@ -229,6 +267,19 @@ export const postAddFriend = async (req, res) => {
         if(request === null) {
             return
         }
+        
+        const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+        .catch(err => {
+            console.error(err);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
+            return null
+        });
+        if(usersForFriend === null) {
+            return
+        }
+
+        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
+
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
         res.status(200).send({status: 200, message: 'Friend Request Sent'});
@@ -267,6 +318,30 @@ export const postAddFriend = async (req, res) => {
             if(userUpdate === null) {
                 return
             }
+
+
+            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForUser === null) {
+                return
+            }
+
+            const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForFriend === null) {
+                return
+            }
+
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -377,6 +452,18 @@ export const postDeclineFriend = async (req, res) => {
             return
         }
 
+        const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+        .catch(err => {
+            console.error(err);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
+            return null
+        });
+        if(usersForUser === null) {
+            return
+        }
+
+        sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
         res.status(200).send({status: 200, message: 'Friend Request Removed'});
@@ -482,6 +569,29 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
+        const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+        .catch(err => {
+            console.error(err);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
+            return null
+        });
+        if(usersForUser === null) {
+            return
+        }
+
+        const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+        .catch(err => {
+            console.error(err);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
+            return null
+        });
+        if(usersForFriend === null) {
+            return
+        }
+
+        sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
+
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
         res.status(200).send({status: 200, message: 'Removed From Friend List'});
@@ -579,6 +689,19 @@ export const postBlock = async (req, res) => {
         if(request === null) {
             return
         }
+
+        const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+        .catch(err => {
+            console.error(err);
+            res.status(500).send({status: 500, message: 'Unknown Server Error'});
+            return null
+        });
+        if(usersForUser === null) {
+            return
+        }
+
+        sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
         res.status(200).send({status: 200, message: 'User Blocked'});
@@ -605,6 +728,19 @@ export const postBlock = async (req, res) => {
             if(userUpdate === null) {
                 return
             }
+
+            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForUser === null) {
+                return
+            }
+
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
             res.status(200).send({status: 200, message: 'User Blocked'});
@@ -636,6 +772,29 @@ export const postBlock = async (req, res) => {
                 return
             }
 
+            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForUser === null) {
+                return
+            }
+
+            const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForFriend === null) {
+                return
+            }
+
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
+
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
             res.status(200).send({status: 200, message: 'User Blocked'});
@@ -656,6 +815,19 @@ export const postBlock = async (req, res) => {
             if(request === null) {
                 return
             }
+
+            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForUser === null) {
+                return
+            }
+
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
             res.status(200).send({status: 200, message: 'User Blocked'});
@@ -686,6 +858,18 @@ export const postBlock = async (req, res) => {
             if(request === null) {
                 return
             }
+
+            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForUser === null) {
+                return
+            }
+
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -774,6 +958,19 @@ export const postUnBlock = async (req, res) => {
             if(removeBlock === null) {
                 return
             }
+
+            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(usersForUser === null) {
+                return
+            }
+
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
             res.status(200).send({status: 200, message: 'User Unblocked'});
@@ -788,6 +985,7 @@ export const postUnBlock = async (req, res) => {
 
 export const getFriends = async (req, res) => {
     if(!req.session.logged) {
+        res.status(401).send({status: 401, message: 'Not Logged In'});
         return
     }
 
@@ -800,6 +998,5 @@ export const getFriends = async (req, res) => {
     if(friends === null) {
         return
     }
-    
-    res.status(200).send({friends: friends[0], status: 200});
+    res.status(200).send({friends: friends[0], status: 200,});
 }

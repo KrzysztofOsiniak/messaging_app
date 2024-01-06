@@ -1,17 +1,16 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useOutletContext } from "react-router-dom";
 import styles from './styles/Me.module.scss'
 
-export async function loader() {
-    return 0
-}
 
 export default function Me() {
+    const [users, setUsers] = useOutletContext();
+
     return(
         <div className={styles.flexWrapper}>
             <nav className={styles.me}>
                 <h2>text</h2>
             </nav>
-            <Outlet />
+            <Outlet context={[users, setUsers]} />
         </div>
     )
 }

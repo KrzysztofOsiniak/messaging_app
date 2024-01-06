@@ -19,6 +19,7 @@ const app = express()
 const port = process.env.PORT || 8080;
 const httpServer = createServer(app);
 const io = new Server(httpServer, {});
+global.io = io;
 
 const options = {
     host: process.env.DB_HOST,
@@ -52,7 +53,7 @@ app.disable('x-powered-by');
 
 const limiter = rateLimit({
 	windowMs: 2 * 60 * 1000, // 2 minutes
-	max: 500, // Limit each IP to 50 requests per `window` (here, per 2 minutes)
+	max: 150, // Limit each IP to 150 requests per `window` (here, per 2 minutes)
 	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
 	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 })
@@ -60,14 +61,6 @@ const limiter = rateLimit({
 // Apply the rate limiting middleware to all requests
 app.use(limiter)
 
-io.on("connection", (socket) => {
-    socket.on('message_in', (message) => {
-        socket.broadcast.emit('message_out', message);
-    });
-    socket.on('logout', () => {
-        socket.disconnect();
-    });
-});
 
 app.use('/users', usersRoutes);
 
@@ -80,6 +73,6 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
     console.log(err)
     res.status(500).send('Server Error');
-  });
+});
 
 httpServer.listen(port, () => console.log(`running on http://localhost:${port}`));

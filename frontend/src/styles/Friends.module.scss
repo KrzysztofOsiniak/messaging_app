@@ -171,6 +171,7 @@
     border-radius: 0.8rem;
     animation-name: popGreen;
     animation-duration: 2s;
+    pointer-events: none;
 }
 .notificationWrapperRed {
     position: absolute;
@@ -186,6 +187,7 @@
     border-radius: 0.8rem;
     animation-name: popRed;
     animation-duration: 2s;
+    pointer-events: none;
 }
 .notification {
     width: 0%;
@@ -197,6 +199,7 @@
     color: rgba(255, 255, 255, 0);
     animation-name: popFont;
     animation-duration: 2s;
+    pointer-events: none;
 }
 @keyframes popGreen {
     0% {

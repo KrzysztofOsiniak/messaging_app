@@ -4,7 +4,7 @@ import {getFriends, getLogged, postAddFriend, postBlock, postDeclineFriend, post
 
 const router = express.Router();
 
-router.get('/logged', getLogged)
+router.get('/logged', getLogged);
 
 router.post('/login', postLogin);
 
@@ -12,13 +12,13 @@ router.post('/signup', postSignup);
 
 router.post('/addfriend', postAddFriend);
 
-router.post('/declinefriend', postDeclineFriend)
+router.post('/declinefriend', postDeclineFriend);
 
-router.post('/removefriend', postRemoveFriend)
+router.post('/removefriend', postRemoveFriend);
 
 router.post('/block', postBlock);
 
-router.post('/unblock', postUnBlock)
+router.post('/unblock', postUnBlock);
 
 router.get('/friends', getFriends);
 

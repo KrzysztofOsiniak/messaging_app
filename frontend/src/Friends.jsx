@@ -1,20 +1,17 @@
 import styles from './styles/Friends.module.scss'
-import { useEffect, useRef, useState } from 'react';
-
+import { useRef, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import blockImg from "./img/block.svg";
 import acceptImg from "./img/accept.svg";
 import chatImg from "./img/chat.svg";
 import closeImg from "./img/close.svg";
 import personRemoveImg from "./img/personRemove.svg";
 
-export async function loader() {
-    return 0
-}
 
 export default function Friends() {
+    const [users, setUsers] = useOutletContext();
+
     const [active, setActive] = useState('Add');
-    
-    const [users, setUsers] = useState([]);
 
     const [notificationText, setNotificationText] = useState('Logged In');
 
@@ -153,20 +150,7 @@ export default function Friends() {
     function handleClick(option) {
         setActive(option)
     }
-    
-    useEffect(() => { 
-        async function get() {
-            const { friends } = await fetch('http://localhost:8080/users/friends', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json());
-            setUsers(friends);
-        }
-        get();
-    }, []);
+
 
     return(
         <div className={styles.friends}>
@@ -202,7 +186,7 @@ export default function Friends() {
                 <Add active={active} handleAdd={handleAdd} />
             </div>
 
-            <div key={refreshCounter} className={`${ notificationColor == 'green' && styles.notificationWrapperGreen } ${notificationColor == 'red' && styles.notificationWrapperRed}`}>
+            <div key={refreshCounter} className={`${ notificationColor == 'green' ? styles.notificationWrapperGreen : ''} ${notificationColor == 'red' ? styles.notificationWrapperRed : ''}`}>
                 <div className={styles.notification}>{notificationText}</div>
             </div>
 
@@ -214,7 +198,7 @@ export default function Friends() {
 
 // eslint-disable-next-line react/prop-types
 function All({ active, users, handleRemoveFriend, handleBlock }) {
-    if (active == "All") {
+    if(active == "All") {
         // eslint-disable-next-line react/prop-types
         const listFriends = users.filter(user => user.status == 'friend')
             .map(user =>
@@ -232,7 +216,7 @@ function All({ active, users, handleRemoveFriend, handleBlock }) {
 
 // eslint-disable-next-line react/prop-types
 function Pending({ active, users, handleAccept, handleDecline, handleBlock }) {
-    if (active == "Pending") {
+    if(active == "Pending") {
         // eslint-disable-next-line react/prop-types
         const listPending = users.filter(user => user.status == 'pending')
             .map(user =>
@@ -250,7 +234,7 @@ function Pending({ active, users, handleAccept, handleDecline, handleBlock }) {
 
 // eslint-disable-next-line react/prop-types
 function Blocked({ active, users, handleUnBlock }) {
-    if (active == "Blocked") {
+    if(active == "Blocked") {
         // eslint-disable-next-line react/prop-types
         const listBlocked = users.filter(user => user.status == 'blocked')
             .map(user =>
@@ -264,9 +248,8 @@ function Blocked({ active, users, handleUnBlock }) {
     return <></>
 }
 function Add({ active, handleAdd }) {
-    const text = useRef('');
-
     if(active == "Add") {
+        const text = useRef('');
         return (
             <form onSubmit={(e) => handleAdd(e, text)} className={styles.addFriendForm}>
                 <input className={styles.addFriendInput} type="text" ref={text} autoComplete="off"/>
