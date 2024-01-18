@@ -201,6 +201,20 @@
     animation-duration: 2s;
     pointer-events: none;
 }
+.onlineActive {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 100%;
+    margin-right: 1rem;
+    background-color: rgb(0, 128, 0);
+}
+.onlineIdle {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 100%;
+    margin-right: 1rem;
+    background-color: #f0af32;
+}
 @keyframes popGreen {
     0% {
         width: 90%;

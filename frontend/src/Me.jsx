@@ -3,14 +3,14 @@ import styles from './styles/Me.module.scss'
 
 
 export default function Me() {
-    const [users, setUsers] = useOutletContext();
+    const [users, setUsers, onlineFriends, setOnlineFriends] = useOutletContext();
 
     return(
         <div className={styles.flexWrapper}>
             <nav className={styles.me}>
                 <h2>text</h2>
             </nav>
-            <Outlet context={[users, setUsers]} />
+            <Outlet context={[users, setUsers, onlineFriends, setOnlineFriends]} />
         </div>
     )
 }

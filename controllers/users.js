@@ -1,5 +1,6 @@
 import db from '../database.js'
 import bcrypt from 'bcrypt'
+import {v4} from 'uuid'
 
 let pendingRequestOnUsers = {};
 
@@ -7,16 +8,147 @@ let onlineUsers = [];
 
 let sockets = [];
 
-function io(io) {
-    io.on('connection', (socket) => {
-        socket.on('addOnline', (user) => {
-            onlineUsers.push(user);
-            socket.username = user;
-            sockets.push(socket);
+function wss(wss) {
+    wss.on('connection', (ws, req) => {
+        ws.on('error', console.error);
+        console.log('started');
+        const index = req.rawHeaders.indexOf('Cookie');
+        if(index == -1) {
+            ws.close();
+            return
+        }
+        const cookie = req.rawHeaders[index+1].substr(16,36);
+
+        let connectionAlive = 0;
+        function checkIfConneted() {
+            if(!ws) {
+                return
+            }
+            ws.ping();
+            setTimeout(() => {
+                if(!connectionAlive) {
+                    ws.close();
+                    console.log('connection lost');
+                    return
+                }
+            }, 6 * 1000);
+            if(!connectionAlive) {
+                return
+            }
+            connectionAlive = 0;
+            setTimeout(checkIfConneted, 60 * 1000);
+        }
+
+        global.sessionStore.get(cookie, async (err, session) => {
+            if(err || !session) {
+                if(err) {
+                    console.log('ws user session error:', err);
+                }
+                if(!session) {
+                    console.log('ws no user session found');
+                }
+                ws.close();
+                return
+            }
+            
+            ws.username = session.username;
+            ws.id = v4();
+            sockets.push(ws);
+            const online = onlineUsers.includes(session.username);
+            onlineUsers.push(session.username);
+
+            if(online) {
+                return
+            }
+
+            checkIfConneted();
+
+            const friends = await db.promise().execute(`select friendName, status from friends where username = ? and status = 'friend';`, [ws.username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(friends === null) {
+                return
+            }
+
+            const friendList = friends[0].map(friend => friend.friendName);
+            sockets.filter(socket => friendList.includes(socket.username)).forEach(socket => socket.send(JSON.stringify(['friendOnline', ws.username]), {binary: false}));
         });
-        socket.on('disconnect', () => {
-            onlineUsers = onlineUsers.filter(user => user != socket.username);
-            sockets = sockets.filter(user => user.username != socket.username);
+
+        ws.on('message', (data) => {
+            if(!ws.id) {
+                ws.close();
+                return
+            }
+            let parsedData = '';
+            
+            try {
+                parsedData = JSON.parse(data)
+            }
+            catch (e) {
+                console.error(err)
+                parsedData = null;
+            }
+            if(parsedData === null) {
+                return
+            }
+
+            if(parsedData[0] == 'client ws opened') {  
+                console.log('received: %s', parsedData[0]);
+            }
+            if(parsedData[0] == 'ping') {
+                ws.send(JSON.stringify(['pong', '']));
+            }
+        });
+
+        ws.on('pong', () => {
+            if(!ws.id) {
+                ws.close();
+                return
+            }
+            connectionAlive = 1
+        });
+
+        ws.on('close', async () => {
+            if(!ws.id) {
+                return
+            }
+
+            sockets = sockets.filter(user => user.id != ws.id);
+
+            let deletedOnce = 0;
+            onlineUsers = onlineUsers.filter(username => {
+                if(deletedOnce) {
+                    return true
+                }
+                if(username == ws.username) {
+                    deletedOnce = 1
+                    return false
+                }
+                return true
+            });
+            const online = onlineUsers.includes(ws.username);
+
+            if(online) {
+                return
+            }
+
+            const friends = await db.promise().execute(`select friendName, status from friends where username = ? and status = 'friend';`, [ws.username])
+            .catch(err => {
+                console.error(err);
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                return null
+            });
+            if(friends === null) {
+                return
+            }
+
+            const friendList = friends[0].map(friend => friend.friendName);
+            sockets.filter(socket => friendList.includes(socket.username)).forEach(socket => socket.send(JSON.stringify(['friendOffline', ws.username]), {binary: false}));
+
+            console.log('disconnected');
         });
     });
 }
@@ -28,25 +160,25 @@ function connect() {
         if(connectionStarted) {
             return
         }
-        if(global.io) {
+        if(global.wss) {
             connectionStarted = 1;
-            const connection = global.io;
-            io(connection);
+            const connection = global.wss;
+            wss(connection);
         }
         else {
             connect()
         }
-    }, 1000);
+    }, 300);
 }
 connect();
 
 
 export const getLogged = (req, res) => {
     if(req.session.logged) {
-        res.status(200).send({logged: 1, username: req.session.username});
+        res.status(200).send({logged: true, username: req.session.username});
         return
     }
-    res.status(401).send({logged: 0});
+    res.status(401).send({logged: false});
 }
 
 export const postLogin = (req, res) => {
@@ -231,7 +363,7 @@ export const postAddFriend = async (req, res) => {
         return
     }
 
-    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendname = ?;`, [username, friendName])
+    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
         req.session.pending = false;
@@ -243,7 +375,7 @@ export const postAddFriend = async (req, res) => {
         return
     }
 
-    const friendStatus = await db.promise().execute(`select * from friends where username = ? and friendname = ?;`, [friendName, username])
+    const friendStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [friendName, username])
     .catch(err => {
         console.error(err);
         req.session.pending = false;
@@ -256,7 +388,7 @@ export const postAddFriend = async (req, res) => {
     }
 
     if(!userStatus[0][0] && !friendStatus[0][0]) {
-        const request = await db.promise().execute(`INSERT INTO friends(username, friendname, status) VALUES(?, ?, ?);`, [friendName, username, 'pending'])
+        const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [friendName, username, 'pending'])
         .catch(err => {
             console.error(err);
             req.session.pending = false;
@@ -268,7 +400,7 @@ export const postAddFriend = async (req, res) => {
             return
         }
         
-        const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+        const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -278,7 +410,7 @@ export const postAddFriend = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
+        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
 
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
@@ -295,7 +427,7 @@ export const postAddFriend = async (req, res) => {
         }
 
         if(userStatus[0][0].status == 'pending') {
-            const usersFriend = await db.promise().execute(`INSERT INTO friends(username, friendname, status) VALUES(?, ?, ?);`, [friendName, username, 'friend'])
+            const usersFriend = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [friendName, username, 'friend'])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -307,7 +439,7 @@ export const postAddFriend = async (req, res) => {
                 return
             }
 
-            const userUpdate = await db.promise().execute(`update friends set status = 'friend' where username = ? and friendname = ?;`, [username, friendName])
+            const userUpdate = await db.promise().execute(`update friends set status = 'friend' where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -320,7 +452,7 @@ export const postAddFriend = async (req, res) => {
             }
 
 
-            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -330,7 +462,7 @@ export const postAddFriend = async (req, res) => {
                 return
             }
 
-            const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+            const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -340,8 +472,13 @@ export const postAddFriend = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
-            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+
+            if(onlineUsers.includes(username) && onlineUsers.includes(friendName)) {
+                sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOnline', friendName]), {binary: false}));
+                sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOnline', username]), {binary: false}));
+            }
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -420,7 +557,7 @@ export const postDeclineFriend = async (req, res) => {
         return
     }
 
-    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendname = ?;`, [username, friendName])
+    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
         req.session.pending = false;
@@ -440,7 +577,7 @@ export const postDeclineFriend = async (req, res) => {
     }
     
     if(userStatus[0][0].status == 'pending') {
-        const removeRequest = await db.promise().execute(`delete from friends where username = ? and friendname = ?;`, [username, friendName])
+        const removeRequest = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
         .catch(err => {
             console.error(err);
             req.session.pending = false;
@@ -452,7 +589,7 @@ export const postDeclineFriend = async (req, res) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+        const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -462,7 +599,7 @@ export const postDeclineFriend = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+        sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
@@ -525,7 +662,7 @@ export const postRemoveFriend = async (req, res) => {
         return
     }
 
-    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendname = ?;`, [username, friendName])
+    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
         req.session.pending = false;
@@ -545,7 +682,7 @@ export const postRemoveFriend = async (req, res) => {
     }
     
     if(userStatus[0][0].status == 'friend') {
-        const removeFriendsUser = await db.promise().execute(`delete from friends where username = ? and friendname = ?;`, [friendName, username])
+        const removeFriendsUser = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
         .catch(err => {
             console.error(err);
             req.session.pending = false;
@@ -557,7 +694,7 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
-        const removeUsersFriend = await db.promise().execute(`delete from friends where username = ? and friendname = ?;`, [username, friendName])
+        const removeUsersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
         .catch(err => {
             console.error(err);
             req.session.pending = false;
@@ -569,7 +706,7 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+        const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -579,7 +716,7 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
-        const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+        const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -589,8 +726,13 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
-        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
+        sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+
+        if(onlineUsers.includes(username) && onlineUsers.includes(friendName)) {
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
+            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
+        }
 
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
@@ -653,7 +795,7 @@ export const postBlock = async (req, res) => {
         return
     }
 
-    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendname = ?;`, [username, friendName])
+    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
         req.session.pending = false;
@@ -665,7 +807,7 @@ export const postBlock = async (req, res) => {
         return
     }
 
-    const friendStatus = await db.promise().execute(`select * from friends where username = ? and friendname = ?;`, [friendName, username])
+    const friendStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [friendName, username])
     .catch(err => {
         console.error(err);
         req.session.pending = false;
@@ -678,7 +820,7 @@ export const postBlock = async (req, res) => {
     }
 
     if(!userStatus[0][0] && !friendStatus[0][0]) {
-        const request = await db.promise().execute(`INSERT INTO friends(username, friendname, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
+        const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
         .catch(err => {
             console.error(err);
             req.session.pending = false;
@@ -690,7 +832,7 @@ export const postBlock = async (req, res) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+        const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -700,7 +842,7 @@ export const postBlock = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+        sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
         req.session.pending = false;
         pendingRequestOnUsers[username] = '';
@@ -717,7 +859,7 @@ export const postBlock = async (req, res) => {
         }
 
         if(userStatus[0][0].status == 'pending') {
-            const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendname = ?;`, [username, friendName])
+            const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -729,7 +871,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -739,7 +881,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -748,7 +890,7 @@ export const postBlock = async (req, res) => {
         }
 
         if(userStatus[0][0].status == 'friend') {
-            const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendname = ?;`, [friendName, username])
+            const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -760,7 +902,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendname = ?;`, [username, friendName])
+            const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -772,7 +914,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -782,7 +924,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForFriend = await db.promise().execute(`select friendname, status from friends where username = ?;`, [friendName])
+            const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -792,8 +934,13 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
-            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.emit('users', usersForFriend[0]));
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+
+            if(onlineUsers.includes(username) && onlineUsers.includes(friendName)) {
+                sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
+                sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
+            }
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -804,7 +951,7 @@ export const postBlock = async (req, res) => {
     
     if(friendStatus[0][0]) {
         if(friendStatus[0][0].status == 'blocked') {
-            const request = await db.promise().execute(`INSERT INTO friends(username, friendname, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
+            const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -816,7 +963,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -826,7 +973,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -835,7 +982,7 @@ export const postBlock = async (req, res) => {
         }
 
         if(friendStatus[0][0].status == 'pending') {
-            const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendname = ?;`, [friendName, username])
+            const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -847,7 +994,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const request = await db.promise().execute(`INSERT INTO friends(username, friendname, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
+            const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -859,7 +1006,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -869,7 +1016,7 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -933,7 +1080,7 @@ export const postUnBlock = async (req, res) => {
         return
     }
     
-    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendname = ?;`, [username, friendName])
+    const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
         req.session.pending = false;
@@ -947,7 +1094,7 @@ export const postUnBlock = async (req, res) => {
 
     if(userStatus[0][0]) {
         if(userStatus[0][0].status == 'blocked') {
-            const removeBlock = await db.promise().execute(`delete from friends where username = ? and friendname = ?;`, [username, friendName])
+            const removeBlock = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
                 req.session.pending = false;
@@ -959,7 +1106,7 @@ export const postUnBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendname, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -969,7 +1116,7 @@ export const postUnBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.emit('users', usersForUser[0]));
+            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
             req.session.pending = false;
             pendingRequestOnUsers[username] = '';
@@ -989,7 +1136,7 @@ export const getFriends = async (req, res) => {
         return
     }
 
-    const friends = await db.promise().execute(`select friendname, status from friends where username = ?;`, [req.session.username])
+    const friends = await db.promise().execute(`select friendName, status from friends where username = ?;`, [req.session.username])
     .catch(err => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -998,5 +1145,7 @@ export const getFriends = async (req, res) => {
     if(friends === null) {
         return
     }
-    res.status(200).send({friends: friends[0], status: 200,});
+
+    const onlineFriends = friends[0].filter(user => user.status == 'friend').map(user => user.friendName).filter(friendName => onlineUsers.includes(friendName));
+    res.status(200).send({friends: friends[0], status: 200, onlineFriends});
 }

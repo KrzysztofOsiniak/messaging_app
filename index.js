@@ -7,7 +7,7 @@ import {v4} from 'uuid'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { createServer } from "http";
-import { Server } from "socket.io";
+import { WebSocketServer } from 'ws';
 const MySQLStore = MySQLSession(session);
 import path from 'path'
 
@@ -18,8 +18,8 @@ import usersRoutes from './routes/users.js'
 const app = express()
 const port = process.env.PORT || 8080;
 const httpServer = createServer(app);
-const io = new Server(httpServer, {});
-global.io = io;
+const wss = new WebSocketServer({ server: httpServer });
+global.wss = wss;
 
 const options = {
     host: process.env.DB_HOST,
@@ -30,6 +30,7 @@ const options = {
     checkExpirationInterval: 1000 * 60 * 30, /* 30 minutes */
 };
 var sessionStore = new MySQLStore(options);
+global.sessionStore = sessionStore;
 
 app.use(session({
     genid: function(req) {
