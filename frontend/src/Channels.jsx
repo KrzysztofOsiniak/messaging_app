@@ -35,17 +35,24 @@ export default function Channels() {
 
     useEffect(() => {
         /*
-            send http get friends, etc request on successful reconnect to not have missed any updates
+            on fetch fail
         */
         const CONNECTING = 0;
         const OPEN = 1;
         const CLOSING = 2;
         const CLOSED = 3;
 
+        let reconnecting = 0;
+        let connectionAlive = 0;
+
         function initiate() {
             ws.current.onopen = () => {
                 console.log("ws opened");
                 ws.current.send(JSON.stringify(['client ws opened', '']));
+                if(reconnecting) {
+                    updateData();
+                    reconnecting = 0;
+                }
             }
 
             ws.current.onclose = () => {
@@ -54,8 +61,8 @@ export default function Channels() {
                 reconnect();
             }
 
-            ws.current.onmessage = (data) => {
-                const parsed = JSON.parse(data.data);
+            ws.current.onmessage = ({ data }) => {
+                const parsed = JSON.parse(data);
                 const event = parsed[0];
                 const parsedData = parsed[1];
                 
@@ -80,19 +87,30 @@ export default function Channels() {
                 console.error("Socket encountered error: ", err.message);
             };
         }
+
+        async function updateData() {
+            const { friends, onlineFriends } = await fetch('http://localhost:8080/users/friends', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json());
+            setUsers(friends);
+            setOnlineFriends(onlineFriends);
+        }
         
         function reconnect() {
             setTimeout(() => {
                 if(ws.current === null) {
                     console.log('reconnecting...');
                     ws.current = new WebSocket("ws://localhost:8080");
+                    reconnecting = 1;
                     initiate();
                 }
             }, 1000);
         }
 
-        
-        let connectionAlive = 0;
         async function checkIfConneted() {
             if(!ws.current) {
                 return setTimeout(checkIfConneted, 4 * 1000);
