@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import styles from './styles/Channels.module.scss'
 
 export async function loader() {
-    const { logged, username } = await fetch('http://localhost:8080/users/logged', {
+    const { logged } = await fetch('http://localhost:8080/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -20,17 +20,17 @@ export async function loader() {
         }
     })
     .then(response => response.json());
-    return {username: username, friends:friends, logged: logged, onlineUsersFriends: onlineFriends}
+    return { friends: friends, onlineUsersFriends: onlineFriends}
 }
 
 export default function Channels() {
-    const { username, friends, logged, onlineUsersFriends } = useLoaderData();
+    const { friends, onlineUsersFriends } = useLoaderData() as { friends: {friendName: string, status: string}[], onlineUsersFriends: string[] };
 
     const [users, setUsers] = useState(friends);
 
     const [onlineFriends, setOnlineFriends] = useState(onlineUsersFriends);
 
-    const ws = useRef(null);
+    const ws: any = useRef(null);
 
 
     useEffect(() => {
@@ -38,9 +38,11 @@ export default function Channels() {
             on fetch fail
         */
         const CONNECTING = 0;
-        const OPEN = 1;
-        const CLOSING = 2;
-        const CLOSED = 3;
+        /*
+            const OPEN = 1;
+            const CLOSING = 2;
+            const CLOSED = 3;
+        */
 
         let reconnecting = 0;
         let connectionAlive = 0;
@@ -61,7 +63,7 @@ export default function Channels() {
                 reconnect();
             }
 
-            ws.current.onmessage = ({ data }) => {
+            ws.current.onmessage = ( { data }: {data: string} ) => {
                 const parsed = JSON.parse(data);
                 const event = parsed[0];
                 const parsedData = parsed[1];
@@ -83,7 +85,7 @@ export default function Channels() {
                 }
             }
 
-            ws.current.onerror = (err) => {
+            ws.current.onerror = (err: {message: string}) => {
                 console.error("Socket encountered error: ", err.message);
             };
         }
@@ -121,7 +123,7 @@ export default function Channels() {
 
             ws.current.send(JSON.stringify(['ping', '']));
             
-            await new Promise(resolve => {
+            await new Promise<void>(resolve => {
                 setTimeout(() => {
                     if(!connectionAlive && ws.current) {
                         console.log('detected dead websocket');
@@ -149,7 +151,7 @@ export default function Channels() {
             <nav className={styles.channels}>
                 <h2>text</h2>
             </nav>
-            <Outlet context={[users, setUsers, onlineFriends, setOnlineFriends]} />
+            <Outlet context={[users, onlineFriends]} />
         </div>
     )
 }

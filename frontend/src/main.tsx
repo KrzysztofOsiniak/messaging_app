@@ -2,10 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Channels, {loader as channelLoader} from './Channels.jsx';
-import Me, { loader as meLoader} from './Me.jsx'
+import Me from './Me.jsx'
 import Login, { loader as loginLoader } from './Login.jsx'
 import Signup, { loader as signupLoader } from './Signup.jsx';
-import Friends, { loader as friendsLoader } from './Friends.jsx';
+import Friends from './Friends.jsx';
 import ErrorPage from './ErrorPage.jsx';
 import './styles/index.scss'
 
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
   }
 ]);
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <RouterProvider router={router} />
   </React.StrictMode>

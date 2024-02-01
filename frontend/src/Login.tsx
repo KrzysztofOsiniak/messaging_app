@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { redirect, useNavigate } from "react-router-dom"
-import styles from './styles/Signup.module.scss'
+import styles from './styles/Login.module.scss'
 
 export async function loader() {
     const { logged } = await fetch('http://localhost:8080/users/logged', {
@@ -11,19 +11,19 @@ export async function loader() {
     })
     .then(response => response.json());
     if(logged) {
-        return redirect('/')
+        return redirect('/channels')
     }
     return null;
 }
 
-export default function Signup() {
+export default function Login() {
     const navigate = useNavigate();
-    const usernameRef = useRef();
-    const passwordRef = useRef();
+    const usernameRef = useRef() as any;
+    const passwordRef = useRef() as any;
     
-    function handleOnClick(e) {
+    function handleOnClick(e: any) {
         e.preventDefault();
-        fetch('http://localhost:8080/users/signup', {
+        fetch('http://localhost:8080/users/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -51,7 +51,7 @@ export default function Signup() {
                     <input ref={usernameRef} className={styles.name} type="text" placeholder="Username" autoComplete="off"/>
                     <input ref={passwordRef} className={styles.password} type="password" placeholder="Password"/>
                     <button className={styles.send} onClick={handleOnClick}>
-                        <h1>Sign Up</h1>
+                        <h1>Log In</h1>
                     </button>				
                 </form>
             </div>

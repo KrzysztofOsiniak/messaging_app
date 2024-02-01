@@ -9,7 +9,7 @@ import personRemoveImg from "./img/personRemove.svg";
 
 
 export default function Friends() {
-    const [users, setUsers, onlineFriends, setOnlineFriends] = useOutletContext();
+    const [users, onlineFriends] = useOutletContext() as [{friendName: string, status: string}[], string[]];
 
     const [active, setActive] = useState('Add');
 
@@ -20,7 +20,7 @@ export default function Friends() {
     const [refreshCounter, setRefreshCounter] = useState(0);
 
 
-    async function handleAccept(user) {
+    async function handleAccept(user: string) {
         const { message, status } = await fetch('http://localhost:8080/users/addfriend', {
             method: 'POST',
             headers: {
@@ -40,7 +40,7 @@ export default function Friends() {
         }
     }
 
-    async function handleDecline(user) {
+    async function handleDecline(user: string) {
         const { message, status } = await fetch('http://localhost:8080/users/declinefriend', {
             method: 'POST',
             headers: {
@@ -60,7 +60,7 @@ export default function Friends() {
         }
     }
 
-    async function handleRemoveFriend(user) {
+    async function handleRemoveFriend(user: string) {
         const { message, status } = await fetch('http://localhost:8080/users/removefriend', {
             method: 'POST',
             headers: {
@@ -80,7 +80,7 @@ export default function Friends() {
         }
     }
 
-    async function handleBlock(user) {
+    async function handleBlock(user: string) {
         const { message, status } = await fetch('http://localhost:8080/users/block', {
             method: 'POST',
             headers: {
@@ -100,7 +100,7 @@ export default function Friends() {
         }
     }
 
-    async function handleUnBlock(user) {
+    async function handleUnBlock(user: string) {
         const { message, status } = await fetch('http://localhost:8080/users/unblock', {
             method: 'POST',
             headers: {
@@ -120,7 +120,7 @@ export default function Friends() {
         }
     }
     
-    async function handleAdd(e, text) {
+    async function handleAdd(e: any, text: any) {
         e.preventDefault();
         const { message, status } = await fetch('http://localhost:8080/users/addfriend', {
             method: 'POST',
@@ -141,13 +141,13 @@ export default function Friends() {
         }
     }
 
-    function notification(message, color) {
+    function notification(message: string, color: string) {
         setNotificationText(message);
         setNotificationColor(color);
         setRefreshCounter(counter => counter + 1);
     }
 
-    function handleClick(option) {
+    function handleClick(option: string) {
         setActive(option)
     }
 
@@ -197,7 +197,8 @@ export default function Friends() {
 
 
 // eslint-disable-next-line react/prop-types
-function Online({ active, users, onlineFriends, handleRemoveFriend, handleBlock }) {
+function Online({ active, users, onlineFriends, handleRemoveFriend, handleBlock }: {active: string, users: {friendName: string, status: string}[], onlineFriends: string[],
+    handleRemoveFriend(user: string): Promise<void>, handleBlock(user: string): Promise<void>}) {
     if(active != "Online") {
         return <></>
     }            
@@ -216,7 +217,8 @@ function Online({ active, users, onlineFriends, handleRemoveFriend, handleBlock 
 }
 
 // eslint-disable-next-line react/prop-types
-function All({ active, users, handleRemoveFriend, handleBlock }) {
+function All({ active, users, handleRemoveFriend, handleBlock }: {active: string, users: {friendName: string, status: string}[],
+    handleRemoveFriend(user: string): Promise<void>, handleBlock(user: string): Promise<void>}) {
     if(active != "All") {
         return <></>
     }
@@ -234,7 +236,8 @@ function All({ active, users, handleRemoveFriend, handleBlock }) {
 }
 
 // eslint-disable-next-line react/prop-types
-function Pending({ active, users, handleAccept, handleDecline, handleBlock }) {
+function Pending({ active, users, handleAccept, handleDecline, handleBlock }: {active: string, users: {friendName: string, status: string}[],
+    handleAccept(user: string): Promise<void>, handleDecline(user: string): Promise<void>, handleBlock(user: string): Promise<void>}) {
     if(active != "Pending") {
         return <></>
     }
@@ -252,7 +255,8 @@ function Pending({ active, users, handleAccept, handleDecline, handleBlock }) {
 }
 
 // eslint-disable-next-line react/prop-types
-function Blocked({ active, users, handleUnBlock }) {
+function Blocked({ active, users, handleUnBlock }: {active: string, users: {friendName: string, status: string}[],
+    handleUnBlock(user: string): Promise<void>}) {
     if(active != "Blocked") {
         return <></>
     }
@@ -266,11 +270,11 @@ function Blocked({ active, users, handleUnBlock }) {
     );
     return <>{listBlocked}</>
 }
-function Add({ active, handleAdd }) {
+function Add({ active, handleAdd }: {active: string, handleAdd(e: any, user: string): Promise<void>}) {
     if(active != "Add") {
         return <></>
     }
-    const text = useRef('');
+    const text = useRef('') as any;
     return (
         <form onSubmit={(e) => handleAdd(e, text)} className={styles.addFriendForm}>
             <input className={styles.addFriendInput} type="text" ref={text} autoComplete="off"/>
