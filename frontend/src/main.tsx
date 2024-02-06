@@ -1,10 +1,11 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { createBrowserRouter, redirect, RouterProvider } from "react-router-dom";
 import Channels, {loader as channelLoader} from './Channels.jsx';
-import Me from './Me.jsx'
-import Login, { loader as loginLoader } from './Login.jsx'
+import Me from './Me.jsx';
+import Login, { loader as loginLoader } from './Login.jsx';
 import Signup, { loader as signupLoader } from './Signup.jsx';
+import Direct, { loader as directLoader } from './Direct.jsx';
 import Friends from './Friends.jsx';
 import ErrorPage from './ErrorPage.jsx';
 import './styles/index.scss'
@@ -12,13 +13,13 @@ import './styles/index.scss'
 
 const router = createBrowserRouter([
   {
-    path: "/channels/me",
+    path: "/channels",
     element: <Channels />,
     loader: channelLoader,
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "",
+        path: "me",
         element: <Me />,
         errorElement: <ErrorPage />,
         children: [
@@ -26,9 +27,32 @@ const router = createBrowserRouter([
             path: "",
             element: <Friends />,
             errorElement: <ErrorPage />,
+          },
+          {
+            path: ":id",
+            element: <Direct />,
+            loader: async ({ params }) => directLoader(params.id),
+            errorElement: <ErrorPage />,
           }
         ]
-      }],
+      },
+      {
+        path: "",
+        element: <ErrorPage />,
+        loader: function loader() {
+          return redirect('/channels/me')
+        },
+        errorElement: <ErrorPage />
+      },
+      {
+        path: "*",
+        element: <ErrorPage />,
+        loader: function loader() {
+          return redirect('/channels/me')
+        },
+        errorElement: <ErrorPage />
+      }
+    ],
   },
   {
     path: "/login",

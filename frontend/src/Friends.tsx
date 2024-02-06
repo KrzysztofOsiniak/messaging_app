@@ -1,6 +1,6 @@
 import styles from './styles/Friends.module.scss'
 import { useRef, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import blockImg from "./img/block.svg";
 import acceptImg from "./img/accept.svg";
 import chatImg from "./img/chat.svg";
@@ -9,18 +9,25 @@ import personRemoveImg from "./img/personRemove.svg";
 
 
 export default function Friends() {
-    const [users, onlineFriends] = useOutletContext() as [{friendName: string, status: string}[], string[]];
+    const {users, onlineFriends} = useOutletContext() as { users: {friendName: string, status: string, id: number}[], onlineFriends: string[] };
 
     const [active, setActive] = useState('Add');
 
-    const [notificationText, setNotificationText] = useState('Logged In');
+    const [notificationText, setNotificationText] = useState('');
 
-    const [notificationColor, setNotificationColor] = useState('green');
+    const [notificationColor, setNotificationColor] = useState('');
 
     const [refreshCounter, setRefreshCounter] = useState(0);
 
+    const navigate = useNavigate();
 
-    async function handleAccept(user: string) {
+
+    function handleMessage(id: number) {
+        navigate(`/channels/me/${id}`);
+    }
+
+    async function handleAccept(e: any, user: string) {
+        e.stopPropagation();
         const { message, status } = await fetch('http://localhost:8080/users/addfriend', {
             method: 'POST',
             headers: {
@@ -40,7 +47,8 @@ export default function Friends() {
         }
     }
 
-    async function handleDecline(user: string) {
+    async function handleDecline(e: any, user: string) {
+        e.stopPropagation();
         const { message, status } = await fetch('http://localhost:8080/users/declinefriend', {
             method: 'POST',
             headers: {
@@ -60,7 +68,8 @@ export default function Friends() {
         }
     }
 
-    async function handleRemoveFriend(user: string) {
+    async function handleRemove(e: any, user: string) {
+        e.stopPropagation();
         const { message, status } = await fetch('http://localhost:8080/users/removefriend', {
             method: 'POST',
             headers: {
@@ -80,7 +89,8 @@ export default function Friends() {
         }
     }
 
-    async function handleBlock(user: string) {
+    async function handleBlock(e: any, user: string) {
+        e.stopPropagation();
         const { message, status } = await fetch('http://localhost:8080/users/block', {
             method: 'POST',
             headers: {
@@ -100,7 +110,8 @@ export default function Friends() {
         }
     }
 
-    async function handleUnBlock(user: string) {
+    async function handleUnBlock(e: any, user: string) {
+        e.stopPropagation();
         const { message, status } = await fetch('http://localhost:8080/users/unblock', {
             method: 'POST',
             headers: {
@@ -180,14 +191,15 @@ export default function Friends() {
             </header>
 
             <div className={styles.friendsContainer}>
-                <Online active={active} users={users} onlineFriends={onlineFriends} handleRemoveFriend={handleRemoveFriend} handleBlock={handleBlock} />
-                <All active={active} users={users} handleRemoveFriend={handleRemoveFriend} handleBlock={handleBlock} />
-                <Pending active={active} users={users} handleAccept={handleAccept} handleDecline={handleDecline} handleBlock={handleBlock} />
-                <Blocked active={active} users={users} handleUnBlock={handleUnBlock} />
+                <Online active={active} users={users} onlineFriends={onlineFriends} handleRemove={handleRemove} handleBlock={handleBlock} handleMessage={handleMessage} />
+                <All active={active} users={users} handleRemove={handleRemove} handleBlock={handleBlock} handleMessage={handleMessage} />
+                <Pending active={active} users={users} handleAccept={handleAccept} handleDecline={handleDecline} handleBlock={handleBlock} handleMessage={handleMessage} />
+                <Blocked active={active} users={users} handleUnBlock={handleUnBlock} handleMessage={handleMessage} />
                 <Add active={active} handleAdd={handleAdd} />
             </div>
 
-            <div key={refreshCounter} className={`${ notificationColor == 'green' ? styles.notificationWrapperGreen : ''} ${notificationColor == 'red' ? styles.notificationWrapperRed : ''}`}>
+            <div key={refreshCounter} className={`${ notificationColor == 'green' ? styles.notificationWrapperGreen : ''} ${!refreshCounter ? styles.hide : ''}
+            ${notificationColor == 'red' ? styles.notificationWrapperRed : ''}`}>
                 <div className={styles.notification}>{notificationText}</div>
             </div>
 
@@ -197,75 +209,77 @@ export default function Friends() {
 
 
 // eslint-disable-next-line react/prop-types
-function Online({ active, users, onlineFriends, handleRemoveFriend, handleBlock }: {active: string, users: {friendName: string, status: string}[], onlineFriends: string[],
-    handleRemoveFriend(user: string): Promise<void>, handleBlock(user: string): Promise<void>}) {
+function Online({ active, users, onlineFriends, handleRemove, handleBlock, handleMessage }: {active: string, users: {friendName: string, status: string, id: number}[],
+    onlineFriends: string[], handleRemove(e: any, user: string): Promise<void>, handleBlock(e: any, user: string): Promise<void>, handleMessage(id: number): void}) {
     if(active != "Online") {
         return <></>
     }            
     // eslint-disable-next-line react/prop-types
     const listOnlineFriends = users.filter(user => onlineFriends.includes(user.friendName))
     .map(user =>
-        <div key={user.friendName} className={styles.userContainer}>
+        <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.onlineActive}> </span>
             <span className={styles.friendName}> {user.friendName} </span>
             <button className={`${styles.push} ${styles.friendOption}`}> <img src={chatImg} alt="chat" /> </button>
-            <button className={styles.friendOption} onClick={() => handleRemoveFriend(user.friendName)}> <img src={personRemoveImg} alt="remove friend" /> </button>
-            <button className={styles.friendOption} onClick={() => handleBlock(user.friendName)}> <img src={blockImg} alt="block" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleRemove(e, user.friendName)}> <img src={personRemoveImg} alt="remove friend" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)}> <img src={blockImg} alt="block" /> </button>
         </div>
     );
     return <>{listOnlineFriends}</>
 }
 
 // eslint-disable-next-line react/prop-types
-function All({ active, users, handleRemoveFriend, handleBlock }: {active: string, users: {friendName: string, status: string}[],
-    handleRemoveFriend(user: string): Promise<void>, handleBlock(user: string): Promise<void>}) {
+function All({ active, users, handleRemove, handleBlock, handleMessage }: {active: string, users: {friendName: string, status: string, id: number}[],
+    handleRemove(e: any, user: string): Promise<void>, handleBlock(e: any, user: string): Promise<void>, handleMessage(id: number): void}) {
     if(active != "All") {
         return <></>
     }
+    
     // eslint-disable-next-line react/prop-types
     const listFriends = users.filter(user => user.status == 'friend')
     .map(user =>
-        <div key={user.friendName} className={styles.userContainer}>
+        <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.friendName}> {user.friendName} </span>
             <button className={`${styles.push} ${styles.friendOption}`}> <img src={chatImg} alt="chat" /> </button>
-            <button className={styles.friendOption} onClick={() => handleRemoveFriend(user.friendName)}> <img src={personRemoveImg} alt="remove friend" /> </button>
-            <button className={styles.friendOption} onClick={() => handleBlock(user.friendName)}> <img src={blockImg} alt="block" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleRemove(e, user.friendName)}> <img src={personRemoveImg} alt="remove friend" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)}> <img src={blockImg} alt="block" /> </button>
         </div>
     );
     return <>{listFriends}</>
 }
 
 // eslint-disable-next-line react/prop-types
-function Pending({ active, users, handleAccept, handleDecline, handleBlock }: {active: string, users: {friendName: string, status: string}[],
-    handleAccept(user: string): Promise<void>, handleDecline(user: string): Promise<void>, handleBlock(user: string): Promise<void>}) {
+function Pending({ active, users, handleAccept, handleDecline, handleBlock, handleMessage }: {active: string, users: {friendName: string, status: string, id: number}[],
+    handleAccept(e: any, user: string): Promise<void>, handleDecline(e: any, user: string): Promise<void>, handleBlock(e: any, user: string): Promise<void>,
+    handleMessage(id: number): void}) {
     if(active != "Pending") {
         return <></>
     }
     // eslint-disable-next-line react/prop-types
     const listPending = users.filter(user => user.status == 'pending')
     .map(user =>
-        <div key={user.friendName} className={styles.userContainer}>
+        <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.friendName}> {user.friendName} </span>
-            <button className={`${styles.friendOption} ${styles.push}`} onClick={() => handleAccept(user.friendName)}> <img src={acceptImg} alt="accept" /> </button>
-            <button className={styles.friendOption} onClick={() => handleDecline(user.friendName)}> <img src={closeImg} alt="decline" /> </button>
-            <button className={styles.friendOption} onClick={() => handleBlock(user.friendName)}> <img src={blockImg} alt="block" /> </button>
+            <button className={`${styles.friendOption} ${styles.push}`} onClick={(e) => handleAccept(e, user.friendName)}> <img src={acceptImg} alt="accept" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleDecline(e, user.friendName)}> <img src={closeImg} alt="decline" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)}> <img src={blockImg} alt="block" /> </button>
         </div>
     );
     return <>{listPending}</>
 }
 
 // eslint-disable-next-line react/prop-types
-function Blocked({ active, users, handleUnBlock }: {active: string, users: {friendName: string, status: string}[],
-    handleUnBlock(user: string): Promise<void>}) {
+function Blocked({ active, users, handleUnBlock, handleMessage }: {active: string, users: {friendName: string, status: string, id: number}[],
+    handleUnBlock(e: any, user: string): Promise<void>, handleMessage(id: number): void}) {
     if(active != "Blocked") {
         return <></>
     }
     // eslint-disable-next-line react/prop-types
     const listBlocked = users.filter(user => user.status == 'blocked')
     .map(user =>
-        <div key={user.friendName} className={styles.userContainer}>
+        <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.friendName}> {user.friendName} </span>
-            <button className={`${styles.friendOption} ${styles.push}`} onClick={() => handleUnBlock(user.friendName)}> <img src={personRemoveImg} alt="unblock" /> </button>
+            <button className={`${styles.friendOption} ${styles.push}`} onClick={(e) => handleUnBlock(e, user.friendName)}> <img src={personRemoveImg} alt="unblock" /> </button>
         </div>
     );
     return <>{listBlocked}</>

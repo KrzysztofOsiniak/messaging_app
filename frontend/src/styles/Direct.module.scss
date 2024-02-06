@@ -1,0 +1,53 @@
+.direct {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+.userContainer {
+    width: 100%;
+    height: 8rem;
+    display: flex;
+    flex: none;
+    justify-content: flex-start;
+    align-items: center;
+    border-bottom: 0.2rem solid #2b2d30;
+}
+.messagesContainer {
+    width: 100%;
+    height: 100%;
+}
+.usernameText {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.8rem;
+}
+.onlineActive {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 100%;
+    margin-right: 1rem;
+    background-color: rgb(0, 128, 0);
+}
+.push {
+    margin-left: 3rem;
+}
+.inputContainer {
+    width: 100%;
+    height: 3.6rem;
+    background-color: goldenrod;
+}
+.inputForm {
+    background-color: orange;
+}
+.input {
+    border-radius: 0.4rem;
+    outline: none;
+    border: none;
+    width: 36rem;
+    height: 3.6rem;
+    font-size: 1.8rem;
+    text-indent: 1rem;
+}

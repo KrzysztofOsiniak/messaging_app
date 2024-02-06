@@ -1,186 +1,8 @@
 import db from '../database.js'
 import bcrypt from 'bcrypt'
-import {v4} from 'uuid'
 
 
-interface pendingRequestOnUsers {
-    username: string;
-}
-
-let pendingRequestOnUsers = {};
-
-let onlineUsers: string[] = [];
-
-let sockets = [];
-
-
-function wss(wss) {
-    wss.on('connection', (ws, req) => {
-        ws.on('error', console.error);
-        console.log('started');
-        const index: number = req.rawHeaders.indexOf('Cookie');
-        if(index == -1) {
-            ws.close();
-            return
-        }
-        const cookie: string = req.rawHeaders[index+1].substr(16,36);
-
-        let connectionAlive: boolean = false;
-        function checkIfConneted() {
-            if(!ws) {
-                return
-            }
-            ws.ping();
-            setTimeout(() => {
-                if(!connectionAlive) {
-                    ws.close();
-                    console.log('connection lost');
-                    return
-                }
-            }, 6 * 1000);
-            if(!connectionAlive) {
-                return
-            }
-            connectionAlive = false;
-            setTimeout(checkIfConneted, 60 * 1000);
-        }
-
-        global.sessionStore.get(cookie, async (err, session) => {
-            if(err || !session) {
-                if(err) {
-                    console.log('ws user session error:', err);
-                }
-                if(!session) {
-                    console.log('ws no user session found');
-                }
-                ws.close();
-                return
-            }
-            
-            ws.username = session.username as string;
-            ws.id = v4() as string;
-            sockets.push(ws);
-            const online: boolean = onlineUsers.includes(session.username);
-            onlineUsers.push(session.username);
-
-            if(online) {
-                return
-            }
-
-            checkIfConneted();
-
-            const friends = await db.promise().execute(`select friendName, status from friends where username = ? and status = 'friend';`, [ws.username])
-            .catch(err => {
-                console.error(err);
-                return null
-            });
-            if(friends === null) {
-                return
-            }
-
-            const friendList = friends[0].map(friend => friend.friendName);
-            sockets.filter(socket => friendList.includes(socket.username)).forEach(socket => socket.send(JSON.stringify(['friendOnline', ws.username]), {binary: false}));
-        });
-
-        ws.on('message', (data: string) => {
-            if(!ws.id) {
-                ws.close();
-                return
-            }
-
-            interface parsedData {
-                data: Array<string>;
-            }
-
-            let parsedData: parsedData;
-            
-            try {
-                parsedData = JSON.parse(data);
-            }
-            catch (err) {
-                console.error(err)
-                parsedData = null;
-            }
-            if(parsedData === null) {
-                return
-            }
-
-            if(parsedData[0] == 'client ws opened') {  
-                console.log('received: %s', parsedData[0]);
-            }
-            if(parsedData[0] == 'ping') {
-                ws.send(JSON.stringify(['pong', '']));
-            }
-        });
-
-        ws.on('pong', () => {
-            if(!ws.id) {
-                ws.close();
-                return
-            }
-            connectionAlive = true;
-        });
-
-        ws.on('close', async () => {
-            if(!ws.id) {
-                return
-            }
-
-            sockets = sockets.filter(user => user.id != ws.id);
-
-            let deletedOnce = 0;
-            onlineUsers = onlineUsers.filter(username => {
-                if(deletedOnce) {
-                    return true
-                }
-                if(username == ws.username) {
-                    deletedOnce = 1
-                    return false
-                }
-                return true
-            });
-            const online = onlineUsers.includes(ws.username);
-
-            if(online) {
-                return
-            }
-
-            const friends = await db.promise().execute(`select friendName, status from friends where username = ? and status = 'friend';`, [ws.username])
-            .catch(err => {
-                console.error(err);
-                return null
-            });
-            if(friends === null) {
-                return
-            }
-
-            const friendList = friends[0].map(friend => friend.friendName);
-            sockets.filter(socket => friendList.includes(socket.username)).forEach(socket => socket.send(JSON.stringify(['friendOffline', ws.username]), {binary: false}));
-
-            console.log('disconnected');
-        });
-    });
-}
-
-
-let connectionStarted: boolean = false;
-function connect() {
-    setTimeout(() => {
-        if(connectionStarted) {
-            return
-        }
-        if(global.wss) {
-            connectionStarted = true;
-            const connection = global.wss;
-            wss(connection);
-        }
-        else {
-            connect()
-        }
-    }, 300);
-}
-connect();
-
+let pendingRequestOnUsers:{[key: string]: string} = {};
 
 export const getLogged = (req, res) => {
     if(req.session.logged) {
@@ -322,10 +144,7 @@ export const postSignup = (req, res) => {
 
 
 export const postAddFriend = async (req, res) => {
-    if(req.session.pending) {
-        return
-    }
-    if(!req.session.logged) {
+if(!req.session.logged) {
         return
     }
 
@@ -333,31 +152,28 @@ export const postAddFriend = async (req, res) => {
     const friendName = req.body.friendName;
 
     if(friendName == username) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
 
     if( (friendName.length > 19) || (!friendName.length) ) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
-    if(pendingRequestOnUsers[friendName] == username) {
-        req.session.pending = false;
+    if(pendingRequestOnUsers[friendName] == username || pendingRequestOnUsers[username] == friendName) {
         res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
-    req.session.pending = true;
+    pendingRequestOnUsers[friendName] = username;
     pendingRequestOnUsers[username] = friendName;
 
     const friendExists = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -366,8 +182,8 @@ export const postAddFriend = async (req, res) => {
     }
 
     if(!friendExists[0][0]) {
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
@@ -375,8 +191,8 @@ export const postAddFriend = async (req, res) => {
     const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -387,8 +203,8 @@ export const postAddFriend = async (req, res) => {
     const friendStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [friendName, username])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -400,8 +216,8 @@ export const postAddFriend = async (req, res) => {
         const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [friendName, username, 'pending'])
         .catch(err => {
             console.error(err);
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
@@ -409,7 +225,8 @@ export const postAddFriend = async (req, res) => {
             return
         }
         
-        const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
+        const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        where friends.username = ?;`, [friendName])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -419,18 +236,18 @@ export const postAddFriend = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+        global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
 
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(200).send({status: 200, message: 'Friend Request Sent'});
         return
     }
 
     if(userStatus[0][0]) {
         if(userStatus[0][0].status == 'friend' || userStatus[0][0].status == 'blocked') {
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(400).send({status: 400, message: 'User Already In Friend/Blocked List'});
             return
         }
@@ -439,8 +256,8 @@ export const postAddFriend = async (req, res) => {
             const usersFriend = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [friendName, username, 'friend'])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -451,8 +268,8 @@ export const postAddFriend = async (req, res) => {
             const userUpdate = await db.promise().execute(`update friends set status = 'friend' where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -461,7 +278,8 @@ export const postAddFriend = async (req, res) => {
             }
 
 
-            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -471,7 +289,8 @@ export const postAddFriend = async (req, res) => {
                 return
             }
 
-            const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
+            const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [friendName])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -481,16 +300,16 @@ export const postAddFriend = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
-            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
 
-            if(onlineUsers.includes(username) && onlineUsers.includes(friendName)) {
-                sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOnline', friendName]), {binary: false}));
-                sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOnline', username]), {binary: false}));
+            if(global.onlineUsers.includes(username) && global.onlineUsers.includes(friendName)) {
+                global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOnline', friendName]), {binary: false}));
+                global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOnline', username]), {binary: false}));
             }
 
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(200).send({status: 200, message: 'Friend Request Accepted'});
             return
         }
@@ -498,28 +317,25 @@ export const postAddFriend = async (req, res) => {
 
     if(friendStatus[0][0]) {
         if(friendStatus[0][0].status == 'pending') {
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(400).send({status: 400, message: 'Friend Request Already Sent'});
             return
         }
         if(friendStatus[0][0].status == 'blocked') {
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(400).send({status: 400, message: 'User Has Blocked You'});
             return
         }
     }
-    req.session.pending = false;
-    pendingRequestOnUsers[username] = '';
+    pendingRequestOnUsers[friendName] = null;
+    pendingRequestOnUsers[username] = null;
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postDeclineFriend = async (req, res) => {
-    if(req.session.pending) {
-        return
-    }
-    if(!req.session.logged) {
+if(!req.session.logged) {
         return
     }
 
@@ -527,31 +343,28 @@ export const postDeclineFriend = async (req, res) => {
     const friendName = req.body.friendName;
 
     if(friendName == username) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
 
     if( (friendName.length > 19) || (!friendName.length) ) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
-    if(pendingRequestOnUsers[friendName] == username) {
-        req.session.pending = false;
+    if(pendingRequestOnUsers[friendName] == username || pendingRequestOnUsers[username] == friendName) {
         res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
-    req.session.pending = true;
+    pendingRequestOnUsers[friendName] = username;
     pendingRequestOnUsers[username] = friendName;
 
     const friendExists = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -560,8 +373,8 @@ export const postDeclineFriend = async (req, res) => {
     }
 
     if(!friendExists[0][0]) {
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
@@ -569,8 +382,8 @@ export const postDeclineFriend = async (req, res) => {
     const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -579,8 +392,8 @@ export const postDeclineFriend = async (req, res) => {
     }
 
     if(!userStatus[0][0]) {
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(400).send({status: 400, message: 'No Friend Request From User'});
         return
     }
@@ -589,8 +402,8 @@ export const postDeclineFriend = async (req, res) => {
         const removeRequest = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
         .catch(err => {
             console.error(err);
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
@@ -598,7 +411,8 @@ export const postDeclineFriend = async (req, res) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        where friends.username = ?;`, [username])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -608,23 +422,20 @@ export const postDeclineFriend = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+        global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(200).send({status: 200, message: 'Friend Request Removed'});
         return
     }
-    req.session.pending = false;
-    pendingRequestOnUsers[username] = '';
+    pendingRequestOnUsers[friendName] = null;
+    pendingRequestOnUsers[username] = null;
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postRemoveFriend = async (req, res) => {
-    if(req.session.pending) {
-        return
-    }
-    if(!req.session.logged) {
+if(!req.session.logged) {
         return
     }
 
@@ -632,31 +443,28 @@ export const postRemoveFriend = async (req, res) => {
     const friendName = req.body.friendName;
 
     if(friendName == username) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
 
     if( (friendName.length > 19) || (!friendName.length) ) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
-    if(pendingRequestOnUsers[friendName] == username) {
-        req.session.pending = false;
+    if(pendingRequestOnUsers[friendName] == username || pendingRequestOnUsers[username] == friendName) {
         res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
-    req.session.pending = true;
+    pendingRequestOnUsers[friendName] = username;
     pendingRequestOnUsers[username] = friendName;
 
     const friendExists = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -665,8 +473,8 @@ export const postRemoveFriend = async (req, res) => {
     }
 
     if(!friendExists[0][0]) {
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
@@ -674,8 +482,8 @@ export const postRemoveFriend = async (req, res) => {
     const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -684,8 +492,8 @@ export const postRemoveFriend = async (req, res) => {
     }
 
     if(!userStatus[0][0]) {
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(400).send({status: 400, message: 'User Not In Friend List'});
         return
     }
@@ -694,8 +502,8 @@ export const postRemoveFriend = async (req, res) => {
         const removeFriendsUser = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
         .catch(err => {
             console.error(err);
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
@@ -706,8 +514,8 @@ export const postRemoveFriend = async (req, res) => {
         const removeUsersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
         .catch(err => {
             console.error(err);
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
@@ -715,7 +523,8 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        where friends.username = ?;`, [username])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -725,7 +534,8 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
-        const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
+        const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        where friends.username = ?;`, [friendName])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -735,29 +545,26 @@ export const postRemoveFriend = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
-        sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+        global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+        global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
 
-        if(onlineUsers.includes(username) && onlineUsers.includes(friendName)) {
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
-            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
+        if(global.onlineUsers.includes(username) && global.onlineUsers.includes(friendName)) {
+            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
+            global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
         }
 
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(200).send({status: 200, message: 'Removed From Friend List'});
         return
     }
-    req.session.pending = false;
-    pendingRequestOnUsers[username] = '';
+    pendingRequestOnUsers[friendName] = null;
+    pendingRequestOnUsers[username] = null;
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postBlock = async (req, res) => {
-    if(req.session.pending) {
-        return
-    }
-    if(!req.session.logged) {
+if(!req.session.logged) {
         return
     }
 
@@ -765,31 +572,28 @@ export const postBlock = async (req, res) => {
     const friendName = req.body.friendName;
 
     if(friendName == username) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
 
     if( (friendName.length > 19) || (!friendName.length) ) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
-    if(pendingRequestOnUsers[friendName] == username) {
-        req.session.pending = false;
+    if(pendingRequestOnUsers[friendName] == username || pendingRequestOnUsers[username] == friendName) {
         res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
-    req.session.pending = true;
+    pendingRequestOnUsers[friendName] = username;
     pendingRequestOnUsers[username] = friendName;
 
     const friendExists = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -798,8 +602,8 @@ export const postBlock = async (req, res) => {
     }
 
     if(!friendExists[0][0]) {
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
@@ -807,8 +611,8 @@ export const postBlock = async (req, res) => {
     const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -819,8 +623,8 @@ export const postBlock = async (req, res) => {
     const friendStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [friendName, username])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -832,8 +636,8 @@ export const postBlock = async (req, res) => {
         const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
         .catch(err => {
             console.error(err);
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
         });
@@ -841,7 +645,8 @@ export const postBlock = async (req, res) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        where friends.username = ?;`, [username])
         .catch(err => {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -851,18 +656,18 @@ export const postBlock = async (req, res) => {
             return
         }
 
-        sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+        global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(200).send({status: 200, message: 'User Blocked'});
         return
     }
 
     if(userStatus[0][0]) {
         if(userStatus[0][0].status == 'blocked') {
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(400).send({status: 400, message: 'User Already Blocked'});
             return
         }
@@ -871,8 +676,8 @@ export const postBlock = async (req, res) => {
             const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -880,7 +685,8 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -890,10 +696,10 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
@@ -902,8 +708,8 @@ export const postBlock = async (req, res) => {
             const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -914,8 +720,8 @@ export const postBlock = async (req, res) => {
             const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -923,7 +729,8 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -933,7 +740,8 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForFriend = await db.promise().execute(`select friendName, status from friends where username = ?;`, [friendName])
+            const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [friendName])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -943,16 +751,16 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
-            sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
 
-            if(onlineUsers.includes(username) && onlineUsers.includes(friendName)) {
-                sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
-                sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
+            if(global.onlineUsers.includes(username) && global.onlineUsers.includes(friendName)) {
+                global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
+                global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
             }
 
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
@@ -963,8 +771,8 @@ export const postBlock = async (req, res) => {
             const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -972,7 +780,8 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -982,10 +791,10 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
@@ -994,8 +803,8 @@ export const postBlock = async (req, res) => {
             const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -1006,8 +815,8 @@ export const postBlock = async (req, res) => {
             const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -1015,7 +824,8 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -1025,24 +835,21 @@ export const postBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(200).send({status: 200, message: 'User Blocked'});
             return
         }
     }
-    req.session.pending = false;
-    pendingRequestOnUsers[username] = '';
+    pendingRequestOnUsers[friendName] = null;
+    pendingRequestOnUsers[username] = null;
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
 export const postUnBlock = async (req, res) => {
-    if(req.session.pending) {
-        return
-    }
-    if(!req.session.logged) {
+if(!req.session.logged) {
         return
     }
 
@@ -1050,31 +857,28 @@ export const postUnBlock = async (req, res) => {
     const friendName = req.body.friendName;
 
     if(friendName == username) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
 
     if( (friendName.length > 19) || (!friendName.length) ) {
-        req.session.pending = false;
         res.status(400).send({status: 400, message: 'Incorrect Username'});
         return
     }
     
-    if(pendingRequestOnUsers[friendName] == username) {
-        req.session.pending = false;
+    if(pendingRequestOnUsers[friendName] == username || pendingRequestOnUsers[username] == friendName) {
         res.status(500).send({status: 500, message: 'Race Condition - Try Again'});
         return
     }
 
-    req.session.pending = true;
+    pendingRequestOnUsers[friendName] = username;
     pendingRequestOnUsers[username] = friendName;
 
     const friendExists = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -1083,8 +887,8 @@ export const postUnBlock = async (req, res) => {
     }
 
     if(!friendExists[0][0]) {
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(400).send({status: 400, message: 'User Does Not Exist'});
         return
     }
@@ -1092,8 +896,8 @@ export const postUnBlock = async (req, res) => {
     const userStatus = await db.promise().execute(`select * from friends where username = ? and friendName = ?;`, [username, friendName])
     .catch(err => {
         console.error(err);
-        req.session.pending = false;
-        pendingRequestOnUsers[username] = '';
+        pendingRequestOnUsers[friendName] = null;
+        pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
     });
@@ -1106,8 +910,8 @@ export const postUnBlock = async (req, res) => {
             const removeBlock = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
             .catch(err => {
                 console.error(err);
-                req.session.pending = false;
-                pendingRequestOnUsers[username] = '';
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
             });
@@ -1115,7 +919,8 @@ export const postUnBlock = async (req, res) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friendName, status from friends where username = ?;`, [username])
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -1125,17 +930,17 @@ export const postUnBlock = async (req, res) => {
                 return
             }
 
-            sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
 
-            req.session.pending = false;
-            pendingRequestOnUsers[username] = '';
+            pendingRequestOnUsers[friendName] = null;
+            pendingRequestOnUsers[username] = null;
             res.status(200).send({status: 200, message: 'User Unblocked'});
             return
         }
     }
 
-    req.session.pending = false;
-    pendingRequestOnUsers[username] = '';
+    pendingRequestOnUsers[friendName] = null;
+    pendingRequestOnUsers[username] = null;
     res.status(400).send({status: 400, message: 'User Not Blocked'});
 }
 
@@ -1145,7 +950,8 @@ export const getFriends = async (req, res) => {
         return
     }
 
-    const friends = await db.promise().execute(`select friendName, status from friends where username = ?;`, [req.session.username])
+    const friends = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+    where friends.username = ?;`, [req.session.username])
     .catch(err => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -1155,6 +961,6 @@ export const getFriends = async (req, res) => {
         return
     }
 
-    const onlineFriends = friends[0].filter(user => user.status == 'friend').map(user => user.friendName).filter(friendName => onlineUsers.includes(friendName));
+    const onlineFriends = friends[0].filter(user => user.status == 'friend').map(user => user.friendName).filter(friendName => global.onlineUsers.includes(friendName));
     res.status(200).send({friends: friends[0], status: 200, onlineFriends});
 }

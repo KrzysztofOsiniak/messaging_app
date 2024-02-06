@@ -13,12 +13,17 @@ import path from 'path'
 const __dirname = path.resolve();
 
 import usersRoutes from './routes/users.js'
+import directRoutes from './routes/direct.js'
+import userWs from './ws.js'
 
 const app = express()
 const port = process.env.PORT || 8080;
 const httpServer = createServer(app);
 const wss = new WebSocketServer({ server: httpServer });
-global.wss = wss;
+
+wss.on('connection', (ws, req) => {
+    userWs(ws, req);
+});
 
 const options = {
     host: process.env.DB_HOST,
@@ -53,6 +58,8 @@ app.disable('x-powered-by');
 
 
 app.use('/users', usersRoutes);
+
+app.use('/direct', directRoutes);
 
 app.use(express.static('../frontend/dist'));
 

@@ -3,14 +3,15 @@ import styles from './styles/Me.module.scss'
 
 
 export default function Me() {
-    const [users, onlineFriends] = useOutletContext() as [{friendName: string, status: string}[], string[]];
+    const { username, users, onlineFriends, directMessagesUpdate } = useOutletContext() as { username: string,
+    users: { friendName: string, status: string, id: number}[], onlineFriends: string[], directMessagesUpdate: {username: string, message: string, order: number} };
 
     return(
         <div className={styles.flexWrapper}>
             <nav className={styles.me}>
                 <h2>text</h2>
             </nav>
-            <Outlet context={[users, onlineFriends]} />
+            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate} } />
         </div>
     )
 }

@@ -7,6 +7,10 @@
 :root {
     font-size: 62.5%; /* from 16px to 10px for easy rem calculation*/
 }
+#root {
+    height: 100vh;
+    width: 100vw;
+}
 body {
     background-color: #313337;
 }

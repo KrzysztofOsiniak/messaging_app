@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import styles from './styles/Channels.module.scss'
 
 export async function loader() {
-    const { logged } = await fetch('http://localhost:8080/users/logged', {
+    const { logged, username } = await fetch('http://localhost:8080/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -20,15 +20,17 @@ export async function loader() {
         }
     })
     .then(response => response.json());
-    return { friends: friends, onlineUsersFriends: onlineFriends}
+    return { username: username, friends: friends, onlineUsersFriends: onlineFriends}
 }
 
 export default function Channels() {
-    const { friends, onlineUsersFriends } = useLoaderData() as { friends: {friendName: string, status: string}[], onlineUsersFriends: string[] };
+    const { username, friends, onlineUsersFriends } = useLoaderData() as { username: string, friends: {friendName: string, status: string, id: number}[], onlineUsersFriends: string[] };
 
     const [users, setUsers] = useState(friends);
 
     const [onlineFriends, setOnlineFriends] = useState(onlineUsersFriends);
+
+    const [directMessagesUpdate, setDirectMessagesUpdate] = useState();
 
     const ws: any = useRef(null);
 
@@ -68,20 +70,22 @@ export default function Channels() {
                 const event = parsed[0];
                 const parsedData = parsed[1];
                 
-                if(event == 'users') {
-                    setUsers(parsedData);
-                }
-
-                if(event == 'friendOnline') {
-                    setOnlineFriends(friends => [...friends, parsedData]);
-                }
-
-                if(event == 'friendOffline') {
-                    setOnlineFriends(friends => friends.filter(friend => friend != parsedData));
-                }
-
-                if(event == 'pong') {
-                    connectionAlive = 1;
+                switch(event) {
+                    case 'users':
+                        setUsers(parsedData);
+                        break
+                    case 'friendOnline':
+                        setOnlineFriends(friends => [...friends, parsedData]);
+                        break
+                    case 'friendOffline':
+                        setOnlineFriends(friends => friends.filter(friend => friend != parsedData));
+                        break
+                    case 'directMessagesUpdate':
+                        setDirectMessagesUpdate(parsedData);
+                        break
+                    case 'pong':
+                        connectionAlive = 1;
+                        break
                 }
             }
 
@@ -151,7 +155,7 @@ export default function Channels() {
             <nav className={styles.channels}>
                 <h2>text</h2>
             </nav>
-            <Outlet context={[users, onlineFriends]} />
+            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate} } />
         </div>
     )
 }
