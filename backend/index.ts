@@ -52,7 +52,7 @@ app.use(session({
     }
 }));
 
-app.use(express.json({limit: '200b'}));
+app.use(express.json({limit: '20kb'}));
 app.use(helmet())
 app.disable('x-powered-by');
 

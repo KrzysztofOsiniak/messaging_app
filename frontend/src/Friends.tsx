@@ -9,15 +9,19 @@ import personRemoveImg from "./img/personRemove.svg";
 
 
 export default function Friends() {
-    const {users, onlineFriends} = useOutletContext() as { users: {friendName: string, status: string, id: number}[], onlineFriends: string[] };
+    const {users, onlineFriends, setActive: setActiveChat} = useOutletContext() as { users: {friendName: string, status: string, id: number}[], onlineFriends: string[], setActive: any };
 
-    const [active, setActive] = useState('Add');
+    const whichActive = onlineFriends[0] ? 'Online' : 'Add';
+
+    const [active, setActive] = useState(whichActive);
 
     const [notificationText, setNotificationText] = useState('');
 
     const [notificationColor, setNotificationColor] = useState('');
 
     const [refreshCounter, setRefreshCounter] = useState(0);
+
+    setActiveChat('Friends');
 
     const navigate = useNavigate();
 

@@ -1,6 +1,6 @@
 import { useLoaderData, useOutletContext, useParams } from "react-router-dom";
 import styles from './styles/Direct.module.scss'
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export async function loader(id: any) {
     const userId = parseInt(id) as number;
@@ -20,8 +20,8 @@ export async function loader(id: any) {
 }
 
 export default function Direct() {
-    const { onlineFriends, username, directMessagesUpdate } = useOutletContext() as { onlineFriends: string[], username: string,
-    directMessagesUpdate: {username: string, message: string, order: number} };
+    const { onlineFriends, username, directMessagesUpdate, setActive } = useOutletContext() as { onlineFriends: string[], username: string,
+    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any };
 
     const { friendName, messages } = useLoaderData() as { friendName: string, messages: {username: string, message: string, order: number}[] };
 
@@ -32,20 +32,12 @@ export default function Direct() {
     const input = useRef() as any;
 
     const isMounted = useRef(false) as any;
-
-    const messagesList = useMemo(() =>
-        directMessages.map(message => 
-        <div key={message.order} className={styles.usernameText}>
-        <div className={styles.usernameText}>
-            {message.username}
-        </div>
-        <div className={styles.usernameText}>
-            {message.message}
-        </div>
-        </div>), [directMessages]);
+    const shouldScroll = useRef(false) as any;
 
     const { id }  = useParams() as any;
     const userId = parseInt(id) as number;
+
+    setActive(friendName);
 
     async function handleMessage(e: any) {
         e.preventDefault()
@@ -61,34 +53,87 @@ export default function Direct() {
             })
         })
         .then(response => response.json());
-        if(status != 200) {
-            console.log('Message not sent');
-            return
+        if(status == 403) {
+            input.current.value = 'You have blocked or been blocked by this user';
         }
     }
 
+    function getMaxScroll(element: any) {
+        const scroll = element.scrollTop;
+        element.scrollTop = 999999;
+        const maxScroll = element.scrollTop;
+        element.scrollTop = scroll;
+
+        return maxScroll;
+    }
+
     useEffect(() => {
+        const messagesContainer = document.getElementById('messagesContainer') as any;
         if(!isMounted.current) {
+            messagesContainer.scrollTop = getMaxScroll(messagesContainer);
             isMounted.current = true;
             return
         }
-        setDirectMessages(directMessages => [...directMessages, directMessagesUpdate])
+
+        if(directMessagesUpdate.username != friendName && directMessagesUpdate.username != username) {
+            return
+        }
+        const repeatedMessage = directMessages.filter(message => message.order == directMessagesUpdate.order);
+        if(repeatedMessage[0]) {
+            return
+        }
+
+        if(messagesContainer.scrollTop == getMaxScroll(messagesContainer)) {
+            shouldScroll.current = true;
+        }
+        setDirectMessages(directMessages => [...directMessages, directMessagesUpdate]);
     }, [directMessagesUpdate]);
+
+    useEffect(() => {
+        if(shouldScroll.current) {
+            const messagesContainer = document.getElementById('messagesContainer') as any;
+            shouldScroll.current = false;
+            messagesContainer.scrollTop = getMaxScroll(messagesContainer);
+        }
+    }, [directMessages]);
+
+    useEffect(() => {
+        shouldScroll.current = true;
+        setDirectMessages(messages);
+    }, [friendName]);
 
     return (
     <div className={styles.direct}>
+
         <header className={styles.userContainer}>
             <span className={`${isOnlineFriend ? (styles.onlineActive + ' ' + styles.push) : ''}`}> </span>
             <span className={`${styles.usernameText} ${!isOnlineFriend ? styles.push : ''}`}> {friendName} </span>
         </header>
-        <div className={styles.messagesContainer}>
-            {messagesList}
+
+        <div className={styles.messagesContainer} id="messagesContainer">
+            <Messages directMessages={directMessages} />
         </div>
+
         <div className={styles.inputContainer} onSubmit={handleMessage}>
                 <form className={styles.inputForm}>
-                    <input ref={input} className={styles.input} type="text" autoComplete="off"/>			
+                    <input ref={input} className={styles.input} type="text" placeholder={`Message ${friendName}`} autoComplete="off"/>			
                 </form>
         </div>
+
     </div>
     )
+}
+
+function Messages({ directMessages }: { directMessages: {username: string, message: string, order: number}[] }) {
+    const messagesList = directMessages.sort((a, b) => a.order - b.order)
+    .map(message => 
+        <div key={message.order} className={styles.messageContainer}>
+            <div className={styles.usernameText}>
+                {message.username}
+            </div>
+            <div className={styles.messageText} >
+                {message.message}
+            </div>
+        </div>)
+    return <>{messagesList}</>
 }

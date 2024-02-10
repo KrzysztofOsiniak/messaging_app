@@ -20,17 +20,27 @@ export async function loader() {
         }
     })
     .then(response => response.json());
-    return { username: username, friends: friends, onlineUsersFriends: onlineFriends}
+    const { allDirect } = await fetch('http://localhost:8080/direct/alldirect', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json());
+    return { username: username, friends: friends, onlineUsersFriends: onlineFriends, allDirectChats: allDirect}
 }
 
 export default function Channels() {
-    const { username, friends, onlineUsersFriends } = useLoaderData() as { username: string, friends: {friendName: string, status: string, id: number}[], onlineUsersFriends: string[] };
+    const { username, friends, onlineUsersFriends, allDirectChats } = useLoaderData() as { username: string, friends: {friendName: string, status: string, id: number}[],
+    onlineUsersFriends: string[], allDirectChats: {friendName: string, order: number}[] };
 
     const [users, setUsers] = useState(friends);
 
     const [onlineFriends, setOnlineFriends] = useState(onlineUsersFriends);
 
     const [directMessagesUpdate, setDirectMessagesUpdate] = useState();
+
+    const [allDirect, setAllDirect] = useState(allDirectChats);
 
     const ws: any = useRef(null);
 
@@ -82,6 +92,14 @@ export default function Channels() {
                         break
                     case 'directMessagesUpdate':
                         setDirectMessagesUpdate(parsedData);
+                        if(parsedData.username == username) {
+                            setAllDirect(allDirect => allDirect.filter(user => user.friendName != parsedData.friendName));
+                            setAllDirect(allDirect => [...allDirect, {friendName: parsedData.friendName, order: parsedData.order}]);
+                        }
+                        else {
+                            setAllDirect(allDirect => allDirect.filter(user => user.friendName != parsedData.username));
+                            setAllDirect(allDirect => [...allDirect, {friendName: parsedData.username, order: parsedData.order}]);
+                        }
                         break
                     case 'pong':
                         connectionAlive = 1;
@@ -155,7 +173,7 @@ export default function Channels() {
             <nav className={styles.channels}>
                 <h2>text</h2>
             </nav>
-            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate} } />
+            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, allDirect: allDirect} } />
         </div>
     )
 }

@@ -3,7 +3,8 @@
     width: 24rem;
     background-color: #2b2d30;
     display: flex;
-    flex: none;
+    flex-direction: column;
+    align-items: center;
 }
 h2 {
     color: #fff;
@@ -12,4 +13,78 @@ h2 {
     display: flex;
     height: 100vh;
     width: 100%;
+}
+.text {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.8rem;
+}
+.user {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+    width: 18rem;
+    height: 4rem;
+    border-radius: 0.6rem;
+    overflow: hidden;
+    &:hover {
+        background-color: rgba(255,255,255,0.1);
+        cursor: pointer;
+    }
+    &:active {
+        background-color: rgba(255,255,255,0.05);
+    }
+}
+.friends {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.9rem;
+    height: 4rem;
+    width: 18rem;
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.8rem;
+    border-radius: 0.6rem;
+    &:hover {
+        background-color: rgba(255,255,255,0.1);
+        cursor: pointer;
+    }
+    &:active {
+        background-color: rgba(255,255,255,0.05);
+    }
+}
+.active {
+    background-color: rgba(255,255,255,0.1);
+    .optionText {
+        color: #fff;
+    }
+    &:hover {
+        background-color: rgba(255,255,255,0.05);
+    }
+}
+.online {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 100%;
+    margin-right: 1rem;
+    background-color: rgb(0, 128, 0);
+}
+.push {
+    padding-right: 2.5rem;
+}
+.directMessagesText {
+    color: #fff;
+    font-size: 1.6rem;
+}
+.directMessagesTextBox {
+    display: flex;
+    justify-content: center;
+    width: 85%;
+    margin-top: 2rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 0.1rem solid rgba(255,255,255,0.85);
 }

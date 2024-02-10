@@ -1,5 +1,8 @@
 node_modules
 controllers/users.js
+controllers/direct.js
 routes/users.js
+routes/direct.js
 index.js
 database.js
+ws.js

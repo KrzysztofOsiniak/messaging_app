@@ -213,7 +213,7 @@ if(!req.session.logged) {
     }
 
     if(!userStatus[0][0] && !friendStatus[0][0]) {
-        const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [friendName, username, 'pending'])
+        const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [friendName, username, 'pending', 1])
         .catch(err => {
             console.error(err);
             pendingRequestOnUsers[friendName] = null;
@@ -253,7 +253,7 @@ if(!req.session.logged) {
         }
 
         if(userStatus[0][0].status == 'pending') {
-            const usersFriend = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [friendName, username, 'friend'])
+            const usersFriend = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [friendName, username, 'friend', 0])
             .catch(err => {
                 console.error(err);
                 pendingRequestOnUsers[friendName] = null;
@@ -633,7 +633,7 @@ if(!req.session.logged) {
     }
 
     if(!userStatus[0][0] && !friendStatus[0][0]) {
-        const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
+        const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [username, friendName, 'blocked', 0])
         .catch(err => {
             console.error(err);
             pendingRequestOnUsers[friendName] = null;
@@ -768,7 +768,7 @@ if(!req.session.logged) {
     
     if(friendStatus[0][0]) {
         if(friendStatus[0][0].status == 'blocked') {
-            const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
+            const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [username, friendName, 'blocked', 0])
             .catch(err => {
                 console.error(err);
                 pendingRequestOnUsers[friendName] = null;
@@ -812,7 +812,7 @@ if(!req.session.logged) {
                 return
             }
 
-            const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status) VALUES(?, ?, ?);`, [username, friendName, 'blocked'])
+            const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [username, friendName, 'blocked', 0])
             .catch(err => {
                 console.error(err);
                 pendingRequestOnUsers[friendName] = null;

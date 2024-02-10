@@ -18,11 +18,30 @@
 .messagesContainer {
     width: 100%;
     height: 100%;
+    overflow-y: auto;
+    scrollbar-color:  #7c7c7c #313337;
+}
+.messageContainer {
+    min-height: 4rem;
+    width: 100%;
+    padding-left: 4rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    &:hover {
+        background-color: rgba(43, 45, 48, 0.6);
+    }
 }
 .usernameText {
     font-weight: bold;
     color: #fff;
     font-size: 1.8rem;
+}
+.messageText {
+    color: #fff;
+    font-size: 1.7rem;
 }
 .onlineActive {
     width: 1.5rem;
@@ -36,18 +55,24 @@
 }
 .inputContainer {
     width: 100%;
-    height: 3.6rem;
-    background-color: goldenrod;
+    height: 7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #2b2d30;
 }
 .inputForm {
-    background-color: orange;
+    width: 95%;
+    height: 4rem;
 }
 .input {
+    background-color: #313337;
+    color: #fff;
+    width: 100%;
+    height: 100%;
     border-radius: 0.4rem;
     outline: none;
     border: none;
-    width: 36rem;
-    height: 3.6rem;
     font-size: 1.8rem;
     text-indent: 1rem;
 }
