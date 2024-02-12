@@ -213,7 +213,7 @@ export const getAllDirect = async (req, res) => {
 
     const username = req.session.username;
     const allDirect = await db.promise().execute(`SELECT direct.friendName, max(directmessages.order) as 'order' FROM directmessages inner join
-    direct on directmessages.id = direct.messagesId WHERE direct.username = ? group by directmessages.id;`, [username])
+    direct on directmessages.id = direct.messagesId WHERE direct.username = ? group by directmessages.id, direct.friendName;`, [username])
     .catch(err => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
