@@ -72,6 +72,7 @@ export default function Channels() {
             ws.current.onclose = () => {
                 console.log("ws closed");
                 ws.current = null;
+                setOnlineFriends([]);
                 reconnect();
             }
 
@@ -122,6 +123,15 @@ export default function Channels() {
             .then(response => response.json());
             setUsers(friends);
             setOnlineFriends(onlineFriends);
+
+            const { allDirect } = await fetch('http://localhost:8080/direct/alldirect', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json());
+            setAllDirect(allDirect);
         }
         
         function reconnect() {
