@@ -55,6 +55,23 @@ export default function Direct() {
         setDirectMessages(messages);
     }
 
+    async function handleBlock(e: any) {
+        e.stopPropagation();
+        const { status } = await fetch('http://localhost:8080/users/block', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                friendName: friendName
+            })
+        })
+        .then(response => response.json());
+        if(status == 200) {
+            return
+        }
+    }
+
     async function handleMessage(e: any) {
         e.preventDefault()
         const messageSent = input.current.value;
@@ -132,6 +149,7 @@ export default function Direct() {
         <header className={styles.userContainer}>
             <span className={`${isOnlineFriend ? (styles.onlineActive + ' ' + styles.push) : ''}`}> </span>
             <span className={`${styles.usernameText} ${!isOnlineFriend ? styles.push : ''}`}> {friendName} </span>
+            <button className={styles.blockButton} onClick={handleBlock}> Block User </button>
         </header>
 
         <div className={styles.messagesContainer} id="messagesContainer">
