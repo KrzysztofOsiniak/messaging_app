@@ -20,8 +20,8 @@ export async function loader(id: any) {
 }
 
 export default function Direct() {
-    const { onlineFriends, username, directMessagesUpdate, setActive } = useOutletContext() as { onlineFriends: string[], username: string,
-    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any };
+    const { onlineFriends, username, directMessagesUpdate, setActive, shouldUpdate, setShouldUpdate } = useOutletContext() as { onlineFriends: string[], username: string,
+    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any, shouldUpdate: boolean, setShouldUpdate: any };
 
     const { friendName, messages } = useLoaderData() as { friendName: string, messages: {username: string, message: string, order: number}[] };
 
@@ -32,12 +32,28 @@ export default function Direct() {
     const input = useRef() as any;
 
     const isMounted = useRef(false) as any;
+    const isMounted2 = useRef(false) as any;
     const shouldScroll = useRef(false) as any;
 
     const { id }  = useParams() as any;
     const userId = parseInt(id) as number;
 
     setActive(friendName);
+
+    async function updateMessages() {
+        setShouldUpdate(false);
+        const { messages, status, message } = await fetch(`http://localhost:8080/direct/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json());
+        if(status != 200) {
+            throw new Error(message);
+        }
+        setDirectMessages(messages);
+    }
 
     async function handleMessage(e: any) {
         e.preventDefault()
@@ -101,6 +117,14 @@ export default function Direct() {
         shouldScroll.current = true;
         setDirectMessages(messages);
     }, [friendName]);
+
+    useEffect(() => {
+        if(!isMounted2.current) {
+            isMounted2.current = true;
+            return
+        }
+        updateMessages();
+    }, [shouldUpdate]);
 
     return (
     <div className={styles.direct}>

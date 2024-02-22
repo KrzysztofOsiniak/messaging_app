@@ -4,8 +4,8 @@ import { useState } from "react";
 
 
 export default function Me() {
-    const { username, users, onlineFriends, directMessagesUpdate, allDirect } = useOutletContext() as { username: string, users: { friendName: string, status: string, id: number}[],
-    onlineFriends: string[], directMessagesUpdate: {username: string, message: string, order: number}, allDirect: {friendName: string, order: number}[] };
+    const { username, users, onlineFriends, directMessagesUpdate, allDirect, shouldUpdate, setShouldUpdate } = useOutletContext() as { username: string, users: { friendName: string, status: string, id: number}[],
+    onlineFriends: string[], directMessagesUpdate: {username: string, message: string, order: number}, allDirect: {friendName: string, order: number}[], shouldUpdate: boolean, setShouldUpdate: any };
 
     const [active, setActive] = useState('Friends');
 
@@ -41,7 +41,8 @@ export default function Me() {
                 </div>
                 <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
             </nav>
-            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, setActive: setActive} } />
+            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, setActive: setActive,
+                shouldUpdate: shouldUpdate, setShouldUpdate: setShouldUpdate } } />
         </div>
     )
 }

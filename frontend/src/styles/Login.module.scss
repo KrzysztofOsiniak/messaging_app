@@ -1,73 +1,71 @@
 h1 {
-    color: #fff;
+	color: #fff;
 }
 .container {
-    width: 30vw;
-    height: 30vh;
-    background-color: #122c5e;
-    margin-left: 35vw;
-    margin-top: 35vh;
-    border-radius: 25px;
+    width: 40rem;
+    height: 30rem;
+	background-color: #122c5e;
+	border-radius: 2.5rem;
+    display: flex;
+    justify-content: center;
+	align-items: center;
+    flex-direction: column;
 }
 .login {
-    width: 100%;
-    height: 100%;
+	width: 100%;
+	height: 100%;
+    display: flex;
+    justify-content: center;
+	align-items: center;
+    flex-direction: column;
 }
 .send {
-    background-color: #154395;
-    width: 50%;
-    height: 20%;
-    cursor: pointer;
-    outline: none;
-    border: none;
-    margin-top: 7%;
-    margin-left: 25%;
-    border-radius: 25px;
+	background-color: #154395;
+	width: 50%;
+	height: 4rem;
+	cursor: pointer;
+	outline: none;
+	border: none;
+	margin-top: 7%;
+	border-radius: 2.5rem;
+	font-size: 2.4rem;
+	font-weight: bold;
+	color: #fff;
 }
 .name {
-    width: 35%;
-    height: 12%;
-    margin-top: 5%;
-    margin-left: 32.5%;
-    outline: none;
-    border: none;
-    font-size: 20px;
-    text-indent: 10px;
-    border-radius: 25px;
+	width: 50%;
+	height: 3.6rem;
+	outline: none;
+	border: none;
+	font-size: 1.8rem;
+	text-indent: 1rem;
+	border-radius: 2.5rem;
 }
 .password {
-    width: 35%;
-    height: 12%;
-    margin-top: 5%;
-    margin-left: 32.5%;
-    outline: none;
-    border: none;
-    font-size: 20px;
-    text-indent: 10px;
-    border-radius: 25px;
+	width: 50%;
+	height: 3.6rem;
+	margin-top: 5%;
+	outline: none;
+	border: none;
+	font-size: 1.8rem;
+	text-indent: 1rem;
+	border-radius: 2.5rem;
 }
-@media (min-width: 650px) and (max-width: 1200px) {
-    .container {
-        width: 50vw;
-        margin-left: 25vw;
-    }
+.bodyContainer {
+	height: 100vh;
+	width: 100vw;
+	background-color: #2b2d30;
+	display: flex;
+	margin-bottom: auto;
+	justify-content: center;
+	align-items: center;
 }
-@media (max-width: 650px) {
-    .container {
-        width: 75vw;
-        margin-left: 12.5vw;
-    }
-    #password {
-        width: 50%;
-        margin-left: 25%;
-    }
-    #name {
-        width: 50%;
-        margin-left: 25%;
-        margin-top: 10%;
-    }
-    .send {
-        width: 65%;
-        margin-left: 17.5%;
-    }
+.errorMessage {
+	margin-top: 1rem;
+	font-size: 1.8rem;
+	color: rgb(255, 20, 20);
+	font-weight: bold;
+}
+.push {
+	margin-top: 1.9rem;
 }

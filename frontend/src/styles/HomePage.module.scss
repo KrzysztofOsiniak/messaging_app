@@ -1,0 +1,33 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+    background-color: #2b2d30;
+}
+.buttonsContainer {
+    height: 30rem;
+    width: 25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background-color: #122c5e;
+    border-radius: 2.5rem;
+}
+.optionButton {
+    background-color: #154395;
+    width: 20rem;
+    height: 5rem;
+    cursor: pointer;
+	outline: none;
+	border: none;
+    border-radius: 2.5rem;
+    color: #fff;
+    font-size: 2.4rem;
+    font-weight: bold;
+}
+.push {
+    margin-top: 5rem;
+}

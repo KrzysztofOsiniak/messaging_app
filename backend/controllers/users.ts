@@ -21,12 +21,12 @@ export const postLogin = (req, res) => {
     }
     req.session.pending = true;
     setTimeout(async () => {
-        const username = req.body.username;
+        const username = req.body.username.trim();
         const password = req.body.password;
 
         if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) ) {
             req.session.destroy();
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'not sent'});
             return
         }
 
@@ -34,7 +34,7 @@ export const postLogin = (req, res) => {
         .catch(err => {
             console.error(err);
             req.session.destroy();
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'not sent'});
             return null
         });
         if(user === null) {
@@ -43,7 +43,7 @@ export const postLogin = (req, res) => {
 
         if(!user[0][0]) {
             req.session.destroy();
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'wrong username or password'});
             return
         }
 
@@ -53,7 +53,7 @@ export const postLogin = (req, res) => {
         .catch(err => {
             console.error(err);
             req.session.destroy();
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'not sent'});
             return null
         });
         if(result === null) {
@@ -62,7 +62,7 @@ export const postLogin = (req, res) => {
         
         if(!result) {
             req.session.destroy();
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'wrong username or password'});
             return
         }
 
@@ -70,7 +70,7 @@ export const postLogin = (req, res) => {
         req.session.logged = true;
         req.session.username = username;
         req.session.pending = false;
-        res.status(200).send({username: req.session.username, status: 200})
+        res.status(200).send({username: req.session.username, status: 200, message: 'sent'})
     }, 200)
 };
 
@@ -84,13 +84,13 @@ export const postSignup = (req, res) => {
     }
     req.session.pending = true;
     setTimeout(async () => {
-        const username = req.body.username;
+        const username = req.body.username.trim();
         const password = req.body.password;
-        const regtest = new RegExp(/[^!-~]/g);
+        const regtest = new RegExp(/[^ -~]/g);
 
         if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) || (regtest.test(username)) ) {
             req.session.destroy();
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'not sent'});
             return
         }
 
@@ -98,7 +98,7 @@ export const postSignup = (req, res) => {
         .catch(err => {
             console.error(err);
             req.session.destroy();
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'not sent'});
             return null
         });
         if(user === null) {
@@ -107,7 +107,7 @@ export const postSignup = (req, res) => {
 
         if(user[0][0]) {
             req.session.destroy();
-            res.sendStatus(400);
+            res.status(400).send({status: 400, message: 'user already exists'});
             return
         }
 
@@ -116,7 +116,7 @@ export const postSignup = (req, res) => {
         .catch(err => {
             console.error(err);
             req.session.destroy();
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'not sent'});
             return null
         });
         if(hash === null) {
@@ -127,7 +127,7 @@ export const postSignup = (req, res) => {
         .catch(err => {
             console.error(err);
             req.session.destroy();
-            res.sendStatus(500);
+            res.status(500).send({status: 500, message: 'not sent'});
             return null
         });
         if(result === null) {
@@ -138,7 +138,7 @@ export const postSignup = (req, res) => {
         req.session.logged = true;
         req.session.username = username;
         req.session.pending = false;
-        res.status(200).send({username: req.session.username, status: 200});
+        res.status(200).send({username: req.session.username, status: 200, message: 'sent'});
     }, 200);
 };
 

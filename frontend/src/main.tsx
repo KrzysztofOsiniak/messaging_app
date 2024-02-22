@@ -9,6 +9,7 @@ import Direct, { loader as directLoader } from './Direct.jsx';
 import Friends from './Friends.jsx';
 import ErrorPage from './ErrorPage.jsx';
 import './styles/index.scss'
+import HomePage, { loader as homePageLoader} from './HomePage.js';
 
 
 const router = createBrowserRouter([
@@ -64,6 +65,12 @@ const router = createBrowserRouter([
     path: "/signup",
     element: <Signup />,
     loader: signupLoader,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: "",
+    element: <HomePage />,
+    loader: homePageLoader,
     errorElement: <ErrorPage />
   },
   {

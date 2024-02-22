@@ -11,7 +11,7 @@ export async function loader() {
     })
     .then(response => response.json());
     if(!logged) {
-        return redirect('/login')
+        return redirect('/')
     }
     const { friends, onlineFriends } = await fetch('http://localhost:8080/users/friends', {
         method: 'GET',
@@ -42,6 +42,8 @@ export default function Channels() {
 
     const [allDirect, setAllDirect] = useState(allDirectChats);
 
+    const [shouldUpdate, setShouldUpdate] = useState(false);
+
     const ws: any = useRef(null);
 
 
@@ -65,6 +67,7 @@ export default function Channels() {
                 ws.current.send(JSON.stringify(['client ws opened', '']));
                 if(reconnecting) {
                     updateData();
+                    setShouldUpdate(true)
                     reconnecting = 0;
                 }
             }
@@ -183,7 +186,8 @@ export default function Channels() {
             <nav className={styles.channels}>
                 <h2>text</h2>
             </nav>
-            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, allDirect: allDirect} } />
+            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate,
+                allDirect: allDirect, shouldUpdate: shouldUpdate, setShouldUpdate: setShouldUpdate } } />
         </div>
     )
 }
