@@ -1,6 +1,6 @@
 import { useLoaderData, useOutletContext, useParams } from "react-router-dom";
 import styles from './styles/Direct.module.scss'
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export async function loader(id: any) {
     const userId = parseInt(id) as number;
@@ -20,8 +20,8 @@ export async function loader(id: any) {
 }
 
 export default function Direct() {
-    const { onlineFriends, username, directMessagesUpdate, setActive, shouldUpdate, setShouldUpdate } = useOutletContext() as { onlineFriends: string[], username: string,
-    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any, shouldUpdate: boolean, setShouldUpdate: any };
+    const { onlineFriends, username, directMessagesUpdate, setActive, shouldUpdate, setShouldUpdate, users } = useOutletContext() as { onlineFriends: string[], username: string,
+    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any, shouldUpdate: boolean, setShouldUpdate: any, users: { friendName: string, status: string, id: number}[] };
 
     const { friendName, messages } = useLoaderData() as { friendName: string, messages: {username: string, message: string, order: number}[] };
 
@@ -37,6 +37,12 @@ export default function Direct() {
 
     const { id }  = useParams() as any;
     const userId = parseInt(id) as number;
+    const friendIsBlocked = useMemo(() => {
+        if(users.filter(user => user.friendName == friendName && user.status == 'blocked')[0]) {
+            return true
+        }
+        return false
+    },[users]);
 
     setActive(friendName);
 
@@ -149,7 +155,7 @@ export default function Direct() {
         <header className={styles.userContainer}>
             <span className={`${isOnlineFriend ? (styles.onlineActive + ' ' + styles.push) : ''}`}> </span>
             <span className={`${styles.usernameText} ${!isOnlineFriend ? styles.push : ''}`}> {friendName} </span>
-            <button className={styles.blockButton} onClick={handleBlock}> Block User </button>
+            <button className={`${styles.blockButton} ${!friendIsBlocked ? styles.active : ''}`} onClick={handleBlock}> {friendIsBlocked ? 'User Blocked' : 'Block User'} </button>
         </header>
 
         <div className={styles.messagesContainer} id="messagesContainer">
