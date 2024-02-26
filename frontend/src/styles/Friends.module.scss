@@ -144,6 +144,8 @@
     border-radius: 50%;
     border: none;
     color: #fff;
+    width: 3.6rem;
+    height: 3.6rem;
     padding: 0.6rem;
     margin: 0rem 1rem 0rem 1rem;
     cursor: pointer;
@@ -218,6 +220,25 @@
 .hide {
     display: none;
 }
+.menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    width: 4.6rem;
+    height: 4.6rem;
+    border: none;
+    color: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    &:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+    &:active {
+        background-color: rgba(255,255,255,0.2);
+    }
+    margin-left: 2rem;
+}
 @keyframes popGreen {
     0% {
         width: 90%;
@@ -263,5 +284,20 @@
         width: 100%;
         height: 100%;
         color: rgba(255, 255, 255, 0);
+    }
+}
+@media screen and (min-width: 950px) {
+    .menu {
+        display: none
+    }
+}
+@media (max-width: 950px) {
+    .friendsText {
+        display: none
+    }
+}
+@media (max-width: 700) {
+    .friendsText {
+        display: none
     }
 }

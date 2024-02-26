@@ -1,6 +1,7 @@
 import { Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import styles from './styles/Me.module.scss'
 import { useState } from "react";
+import menuImg from "./img/menu.svg";
 
 
 export default function Me() {
@@ -8,6 +9,7 @@ export default function Me() {
     onlineFriends: string[], directMessagesUpdate: {username: string, message: string, order: number}, allDirect: {friendName: string, order: number}[], shouldUpdate: boolean, setShouldUpdate: any };
 
     const [active, setActive] = useState('Friends');
+    const [menuActive, setMenuActive] = useState(0);
 
     const navigate = useNavigate();
 
@@ -21,16 +23,23 @@ export default function Me() {
         .then(response => response.json());
         if(status == 200) {
             setActive(friendName);
+            setMenuActive(0);
             navigate(`/channels/me/${id}`);
         }
     }
 
     function handleClickFriends() {
         setActive('Friends');
+        setMenuActive(0);
         navigate('/channels/me');
     }
 
+    function handleMenu() {
+        return setMenuActive((menuActive: any) => menuActive ? 0 : 1);
+    }
+
     return(
+        <>
         <div className={styles.flexWrapper}>
             <nav className={styles.me}>
                 <div className={`${styles.friends} ${active == 'Friends' ? styles.active : ''}`} onClick={handleClickFriends}>
@@ -44,6 +53,22 @@ export default function Me() {
             <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, setActive: setActive,
                 shouldUpdate: shouldUpdate, setShouldUpdate: setShouldUpdate } } />
         </div>
+
+        <div className={styles.flexWrapperMobile}>
+            <nav className={`${menuActive ? styles.meMobile : styles.meMobileHide} ${menuActive ? '' : styles.hide}`}>
+                <div className={`${styles.friends} ${active == 'Friends' ? styles.active : ''}`} onClick={handleClickFriends}>
+                    Friends
+                </div>
+                <span className={styles.menu} onClick={handleMenu} > <img src={menuImg} alt="show menu"/> </span>
+                <div className={styles.directMessagesTextBox}>
+                    <span className={styles.directMessagesText}> Direct Messages </span>
+                </div>
+                <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
+            </nav>
+            <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, setActive: setActive,
+                shouldUpdate: shouldUpdate, setShouldUpdate: setShouldUpdate, menuActive: menuActive, setMenuActive: setMenuActive } } />
+        </div>
+        </>
     )
 }
 

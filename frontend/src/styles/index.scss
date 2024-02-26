@@ -22,3 +22,26 @@ h2 {
 h3 {
     color: #fff;
 }
+.hide {
+    display: none;
+}
+@media (max-width: 650px) {
+    :root {
+        font-size: 50%;
+    }
+}
+@media (max-width: 530px) {
+    :root {
+        font-size: 40%;
+    }
+}
+@media (max-width: 420px) {
+    :root {
+        font-size: 35%;
+    }
+}
+@media (max-width: 360px) {
+    :root {
+        font-size: 30%;
+    }
+}

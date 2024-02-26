@@ -1,6 +1,7 @@
 import { useLoaderData, useOutletContext, useParams } from "react-router-dom";
 import styles from './styles/Direct.module.scss'
 import { useEffect, useMemo, useRef, useState } from "react";
+import menuImg from "./img/menu.svg";
 
 export async function loader(id: any) {
     const userId = parseInt(id) as number;
@@ -20,8 +21,9 @@ export async function loader(id: any) {
 }
 
 export default function Direct() {
-    const { onlineFriends, username, directMessagesUpdate, setActive, shouldUpdate, setShouldUpdate, users } = useOutletContext() as { onlineFriends: string[], username: string,
-    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any, shouldUpdate: boolean, setShouldUpdate: any, users: { friendName: string, status: string, id: number}[] };
+    const { onlineFriends, username, directMessagesUpdate, setActive, shouldUpdate, setShouldUpdate, users, menuActive, setMenuActive } = useOutletContext() as { onlineFriends: string[], username: string,
+    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any, shouldUpdate: boolean, setShouldUpdate: any, users: { friendName: string, status: string, id: number}[],
+    menuActive: number, setMenuActive: any };
 
     const { friendName, messages } = useLoaderData() as { friendName: string, messages: {username: string, message: string, order: number}[] };
 
@@ -97,6 +99,10 @@ export default function Direct() {
         }
     }
 
+    function handleMenu() {
+        return setMenuActive((menuActive: any) => menuActive ? 0 : 1);
+    }
+
     function getMaxScroll(element: any) {
         const scroll = element.scrollTop;
         element.scrollTop = 999999;
@@ -150,9 +156,10 @@ export default function Direct() {
     }, [shouldUpdate]);
 
     return (
-    <div className={styles.direct}>
+    <div className={styles.direct} onClick={() => {if(menuActive) setMenuActive(0)}}>
 
         <header className={styles.userContainer}>
+            <span className={styles.menu} onClick={handleMenu} > <img src={menuImg} alt="show menu"/> </span>
             <span className={`${isOnlineFriend ? (styles.onlineActive + ' ' + styles.push) : ''}`}> </span>
             <span className={`${styles.usernameText} ${!isOnlineFriend ? styles.push : ''}`}> {friendName} </span>
             <button className={`${styles.blockButton} ${!friendIsBlocked ? styles.active : ''}`} onClick={handleBlock}> {friendIsBlocked ? 'User Blocked' : 'Block User'} </button>

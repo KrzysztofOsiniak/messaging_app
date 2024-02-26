@@ -6,10 +6,12 @@ import acceptImg from "./img/accept.svg";
 import chatImg from "./img/chat.svg";
 import closeImg from "./img/close.svg";
 import personRemoveImg from "./img/personRemove.svg";
+import menuImg from "./img/menu.svg";
 
 
 export default function Friends() {
-    const {users, onlineFriends, setActive: setActiveChat} = useOutletContext() as { users: {friendName: string, status: string, id: number}[], onlineFriends: string[], setActive: any };
+    const {users, onlineFriends, setActive: setActiveChat, menuActive, setMenuActive} = useOutletContext() as { users: {friendName: string, status: string, id: number}[],
+    onlineFriends: string[], setActive: any, menuActive: number, setMenuActive: any };
 
     const whichActive = onlineFriends[0] ? 'Online' : 'Add';
 
@@ -166,11 +168,16 @@ export default function Friends() {
         setActive(option)
     }
 
+    function handleMenu() {
+        return setMenuActive((menuActive: any) => menuActive ? 0 : 1);
+    }
+
 
     return(
-        <div className={styles.friends}>
+        <div className={styles.friends} onClick={() => {if(menuActive) setMenuActive(0)}}>
 
             <header className={styles.optionsContainer}>
+                <span className={styles.menu} onClick={handleMenu} > <img src={menuImg} alt="show menu"/> </span>
                 <span className={styles.friendsText}>Friends</span>
 
                 <button className={ `${styles.option} ${ active == 'Online' && styles.active }` } onClick={() => handleClick('Online')}>
@@ -224,9 +231,9 @@ function Online({ active, users, onlineFriends, handleRemove, handleBlock, handl
         <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.onlineActive}> </span>
             <span className={styles.friendName}> {user.friendName} </span>
-            <button className={`${styles.push} ${styles.friendOption}`}> <img src={chatImg} alt="chat" /> </button>
-            <button className={styles.friendOption} onClick={(e) => handleRemove(e, user.friendName)}> <img src={personRemoveImg} alt="remove friend" /> </button>
-            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)}> <img src={blockImg} alt="block" /> </button>
+            <button className={`${styles.push} ${styles.friendOption}`} title='Open Chat'> <img src={chatImg} alt="chat" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleRemove(e, user.friendName)} title='Remove Friend'> <img src={personRemoveImg} alt="remove friend" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)} title='Remove And Block Friend'> <img src={blockImg} alt="block" /> </button>
         </div>
     );
     return <>{listOnlineFriends}</>
@@ -244,9 +251,9 @@ function All({ active, users, handleRemove, handleBlock, handleMessage }: {activ
     .map(user =>
         <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.friendName}> {user.friendName} </span>
-            <button className={`${styles.push} ${styles.friendOption}`}> <img src={chatImg} alt="chat" /> </button>
-            <button className={styles.friendOption} onClick={(e) => handleRemove(e, user.friendName)}> <img src={personRemoveImg} alt="remove friend" /> </button>
-            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)}> <img src={blockImg} alt="block" /> </button>
+            <button className={`${styles.push} ${styles.friendOption}`} title='Open Chat'> <img src={chatImg} alt="chat" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleRemove(e, user.friendName)} title='Remove Friend'> <img src={personRemoveImg} alt="remove friend" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)} title='Remove And Block Friend'> <img src={blockImg} alt="block" /> </button>
         </div>
     );
     return <>{listFriends}</>
@@ -264,9 +271,9 @@ function Pending({ active, users, handleAccept, handleDecline, handleBlock, hand
     .map(user =>
         <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.friendName}> {user.friendName} </span>
-            <button className={`${styles.friendOption} ${styles.push}`} onClick={(e) => handleAccept(e, user.friendName)}> <img src={acceptImg} alt="accept" /> </button>
-            <button className={styles.friendOption} onClick={(e) => handleDecline(e, user.friendName)}> <img src={closeImg} alt="decline" /> </button>
-            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)}> <img src={blockImg} alt="block" /> </button>
+            <button className={`${styles.friendOption} ${styles.push}`} onClick={(e) => handleAccept(e, user.friendName)} title='Accept Friend Request'> <img src={acceptImg} alt="accept" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleDecline(e, user.friendName)} title='Decline Friend Request'> <img src={closeImg} alt="decline" /> </button>
+            <button className={styles.friendOption} onClick={(e) => handleBlock(e, user.friendName)} title='Block User'> <img src={blockImg} alt="block" /> </button>
         </div>
     );
     return <>{listPending}</>
@@ -283,7 +290,7 @@ function Blocked({ active, users, handleUnBlock, handleMessage }: {active: strin
     .map(user =>
         <div key={user.friendName} className={styles.userContainer} onClick={() => handleMessage(user.id)}>
             <span className={styles.friendName}> {user.friendName} </span>
-            <button className={`${styles.friendOption} ${styles.push}`} onClick={(e) => handleUnBlock(e, user.friendName)}> <img src={personRemoveImg} alt="unblock" /> </button>
+            <button className={`${styles.friendOption} ${styles.push}`} onClick={(e) => handleUnBlock(e, user.friendName)} title='Unblock User'> <img src={personRemoveImg} alt="unblock" /> </button>
         </div>
     );
     return <>{listBlocked}</>

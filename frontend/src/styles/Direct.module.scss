@@ -91,11 +91,36 @@
     margin-left: 5rem;
 }
 .active {
+    background-color: rgb(164, 0, 0);
     cursor: pointer;
     &:hover {
         background-color: rgba(255,255,255,0.1);
     }
     &:active {
         background-color: rgba(255,255,255,0.05);
+    }
+}
+.menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    width: 4.6rem;
+    height: 4.6rem;
+    border: none;
+    color: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    &:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+    &:active {
+        background-color: rgba(255,255,255,0.2);
+    }
+    margin-left: 2rem;
+}
+@media screen and (min-width: 950px) {
+    .menu {
+        display: none
     }
 }
