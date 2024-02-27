@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import styles from './styles/Me.module.scss'
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import menuImg from "./img/menu.svg";
 
 
@@ -10,6 +10,8 @@ export default function Me() {
 
     const [active, setActive] = useState('Friends');
     const [menuActive, setMenuActive] = useState(0);
+    const isMounted = useRef(0) as any;
+    const [hideActive, setHideActive] = useState(1);
 
     const navigate = useNavigate();
 
@@ -38,6 +40,16 @@ export default function Me() {
         return setMenuActive((menuActive: any) => menuActive ? 0 : 1);
     }
 
+    useEffect(() => {
+        if(!isMounted.current) {
+            isMounted.current = 1;
+            return
+        }
+        if(hideActive) {
+            setHideActive(0);
+        }
+    }, [menuActive]);
+
     return(
         <>
         <div className={styles.flexWrapper}>
@@ -55,7 +67,7 @@ export default function Me() {
         </div>
 
         <div className={styles.flexWrapperMobile}>
-            <nav className={`${menuActive ? styles.meMobile : styles.meMobileHide} ${menuActive ? '' : styles.hide}`}>
+            <nav className={`${hideActive ? 'hide' : ''} ${menuActive ? styles.meMobileShow : styles.meMobileHide} ${menuActive ? '' : styles.hide}`}>
                 <div className={`${styles.friends} ${active == 'Friends' ? styles.active : ''}`} onClick={handleClickFriends}>
                     Friends
                 </div>
