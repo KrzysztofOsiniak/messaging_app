@@ -21,7 +21,8 @@ export default function userWs(ws, req) {
         ws.close();
         return
     }
-    const cookie: string = req.rawHeaders[index+1].substr(16,36);
+    const keyIndex: number = req.rawHeaders[index + 1].indexOf('connect.sid=');
+    const cookie: string = req.rawHeaders[index + 1].substr(keyIndex + 16, keyIndex + 36);
 
     let connectionAlive: boolean = false;
     async function checkIfConneted() {
