@@ -7,11 +7,11 @@ Currently hosted on [digital ocean](https://www.digitalocean.com/) vps running l
 User requests go through [cloudflare](https://www.cloudflare.com) servers, then get forwarded to the app through [nginx](https://nginx.org/en/).
 ### Usage
 In this app you can:
-- text with other people in real time
-- send friend requests to other users
-- see when your friends are online
-- block users to prevent them from texting you
-- check recent chats
+- Text with other people in real time
+- Send friend requests to other users
+- See when your friends are online
+- Block users to prevent them from texting you
+- Check recent chats
 ## Libraries/Frameworks Used
 ### Frontend
 - [react](https://github.com/facebook/react) - component based UI library
