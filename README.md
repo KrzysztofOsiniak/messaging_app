@@ -1,7 +1,3 @@
-## Table Of Contents
-- [About The App/How To Use](https://github.com/KrzysztofOsiniak/messaging_app/#about-the-apphow-to-use)
-- [Libraries/Frameworks Used](https://github.com/KrzysztofOsiniak/messaging_app/#librariesframeworks-used)
-- [How To Install/Run](https://github.com/KrzysztofOsiniak/messaging_app/#how-to-installrun)
 ## About The App/How To Use
 ### About The App
 A full-stack app written in javascript for communication through message chats.
