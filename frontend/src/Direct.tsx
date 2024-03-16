@@ -34,7 +34,6 @@ export default function Direct() {
     const input = useRef() as any;
 
     const isMounted = useRef(false) as any;
-    const isMounted2 = useRef(false) as any;
     const shouldScroll = useRef(false) as any;
 
     const { id }  = useParams() as any;
@@ -148,10 +147,6 @@ export default function Direct() {
     }, [friendName]);
 
     useEffect(() => {
-        if(!isMounted2.current) {
-            isMounted2.current = true;
-            return
-        }
         updateMessages();
     }, [shouldUpdate]);
 
