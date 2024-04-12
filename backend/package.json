@@ -19,7 +19,7 @@
     "express-mysql-session": "^2.1.8",
     "express-session": "^1.17.3",
     "helmet": "^5.1.1",
-    "mysql2": "^2.3.3",
+    "mysql2": "^3.9.4",
     "path": "^0.12.7",
     "uuid": "^8.3.2",
     "ws": "^8.16.0"
