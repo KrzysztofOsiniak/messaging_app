@@ -2,7 +2,11 @@
     "compilerOptions": {
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
-        "target": "ES2020"
+        "target": "ES2020",
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
     },
     "include": ["controllers/*", "*", "routes/*"]
 }

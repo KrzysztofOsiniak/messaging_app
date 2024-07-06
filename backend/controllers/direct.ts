@@ -1,14 +1,35 @@
 import db from '../database.js'
 import {v4} from 'uuid'
+import * as wsFunctions from '../ws.js'
 
-let pendingRequestOnUsers:{[key: string]: string} = {};
+import type { Request, Response } from 'express';
+import type { Session } from 'express-session';
+import type { QueryResult, FieldPacket, ResultSetHeader } from 'mysql2';
 
-export const getDirect = async (req, res) => {
+type UserSession = Session & {
+    logged?: boolean
+    pending?: boolean
+    userId?: number
+    username?: string
+}
+type UserRequest = Request & {
+    session: UserSession
+}
+type UserQueryResult = QueryResult & {
+    username: string
+    friendName: string
+    id: number
+    messagesId: string
+}
+
+let pendingRequestOnUsers:{[key: string]: string|null} = {};
+
+export const getDirect = async (req: UserRequest, res: Response) => {
     if(!req.session.logged) {
         return
     }
 
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
 
     if(req.session.userId == id) {
         res.status(400).send({status: 400, message: 'Bad Request'});
@@ -20,7 +41,7 @@ export const getDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friend === null) {
         return
     }
@@ -29,7 +50,7 @@ export const getDirect = async (req, res) => {
         return
     }
 
-    const username = req.session.username;
+    const username = req.session.username as string;
     const friendName = friend[0][0].username;
 
     const messages = await db.promise().execute(`select directmessages.username, directmessages.message, directmessages.order from directmessages inner join direct
@@ -38,7 +59,7 @@ export const getDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(messages === null) {
         return
     }
@@ -52,7 +73,7 @@ export const getDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(direct === null) {
         return
     }
@@ -77,7 +98,7 @@ export const getDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(createDirect === null) {
         pendingRequestOnUsers[username] = null;
         pendingRequestOnUsers[friendName] = null;
@@ -90,7 +111,7 @@ export const getDirect = async (req, res) => {
 }
 
 
-export const getUserId = async (req, res) => {
+export const getUserId = async (req: UserRequest, res: Response) => {
     if(!req.session.logged) {
         return
     }
@@ -107,7 +128,7 @@ export const getUserId = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friend === null) {
         return
     }
@@ -120,12 +141,12 @@ export const getUserId = async (req, res) => {
 }
 
 
-export const postDirect = async (req, res) => {
+export const postDirect = async (req: UserRequest, res: Response) => {
     if(!req.session.logged) {
         return
     }
 
-    const { id } = req.params;
+    const id = parseInt(req.params.id);
 
     if(req.session.userId == id || !req.body.message) {
         res.status(400).send({status: 400, message: 'Bad Request'});
@@ -141,7 +162,7 @@ export const postDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friend === null) {
         return
     }
@@ -150,7 +171,7 @@ export const postDirect = async (req, res) => {
         return
     }
 
-    const username = req.session.username;
+    const username = req.session.username as string;
     const friendName = friend[0][0].username;
 
     const blockedUser = await db.promise().execute(`select username, friendName from friends where username = ? and friendName = ? and status = 'blocked' or
@@ -159,7 +180,7 @@ export const postDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(blockedUser === null) {
         return
     }
@@ -173,7 +194,7 @@ export const postDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(directId === null) {
         return
     }
@@ -190,23 +211,20 @@ export const postDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [ResultSetHeader, FieldPacket[]] | null;
     if(createDirectMessage === null) {
         return
     }
     const order = createDirectMessage[0].insertId;
 
-    global.sockets.filter(socket => socket.username == username)
-    .forEach(socket => socket.send(JSON.stringify(['directMessagesUpdate', {message: message, username: username, friendName: friendName, order: order}]), {binary: false}));
-
-    global.sockets.filter(socket => socket.username == friendName)
-    .forEach(socket => socket.send(JSON.stringify(['directMessagesUpdate', {message: message, username: username, order: order}]), {binary: false}));
+    wsFunctions.sendTo(username, {message: message, username: username, friendName: friendName, order: order});
+    wsFunctions.sendTo(friendName, {message: message, username: username, order: order});
 
     res.status(200).send({status: 200, message: 'Message Sent'});
 }
 
 
-export const getAllDirect = async (req, res) => {
+export const getAllDirect = async (req: UserRequest, res: Response) => {
     if(!req.session.logged) {
         return
     }
@@ -218,7 +236,7 @@ export const getAllDirect = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(allDirect === null) {
         return
     }

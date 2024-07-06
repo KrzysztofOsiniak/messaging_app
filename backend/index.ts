@@ -7,6 +7,7 @@ import {v4} from 'uuid'
 import helmet from 'helmet'
 import { createServer } from "http";
 import { WebSocketServer } from 'ws';
+// @ts-ignore: lack of type documentation
 const MySQLStore = MySQLSession(session);
 import path from 'path'
 
@@ -34,14 +35,14 @@ const options = {
     checkExpirationInterval: 1000 * 60 * 30, /* 30 minutes */
 };
 var sessionStore = new MySQLStore(options);
-global.sessionStore = sessionStore;
+export { sessionStore }
 
 app.use(session({
-    genid: function(req) {
+    genid: function(_req) {
         return v4()
       },
     store: sessionStore,
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET as string,
     saveUninitialized: false,
     resave: true,
     cookie: { 
@@ -63,13 +64,8 @@ app.use('/direct', directRoutes);
 
 app.use(express.static('../frontend/dist'));
 
-app.get('*', (req, res) => {
+app.get('*', (_req, res) => {
     res.sendFile(path.resolve(__dirname, '../frontend/dist/index.html'));
-});
-
-app.use((err, req, res, next) => {
-    console.log(err)
-    res.status(500).send('Server Error');
 });
 
 httpServer.listen(port, () => console.log(`running on http://localhost:${port}`));

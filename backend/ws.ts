@@ -1,19 +1,23 @@
 import db from './database.js'
 import {v4} from 'uuid'
+import { sessionStore } from './index.js'
 
+import type { WebSocket } from 'ws';
+import type { IncomingMessage } from "http";
+import type { QueryResult, FieldPacket } from 'mysql2';
 
+interface UserWebSocket extends WebSocket {
+    id?: string
+    username?: string
+}
+
+type UserQueryResult = QueryResult & { friendName: string }
 
 let onlineUsers: string[] = [];
 
-let sockets = [];
+let sockets: UserWebSocket[] = [];
 
-
-global.onlineUsers = onlineUsers;
-
-global.sockets = sockets;
-
-
-export default function userWs(ws, req) {
+export default function userWs(ws: UserWebSocket, req: IncomingMessage) {
     ws.on('error', console.error);
     console.log('started');
     const index: number = req.rawHeaders.indexOf('Cookie');
@@ -47,7 +51,7 @@ export default function userWs(ws, req) {
         setTimeout(checkIfConneted, 60 * 1000);
     }
 
-    global.sessionStore.get(cookie, async (err, session) => {
+    sessionStore.get(cookie, async (err, session) => {
         if(err || !session) {
             if(err) {
                 console.log('ws user session error:', err);
@@ -61,9 +65,9 @@ export default function userWs(ws, req) {
         
         ws.username = session.username as string;
         ws.id = v4() as string;
-        global.sockets.push(ws);
-        const online: boolean = global.onlineUsers.includes(session.username);
-        global.onlineUsers.push(session.username);
+        sockets.push(ws);
+        const online: boolean = onlineUsers.includes(session.username);
+        onlineUsers.push(session.username);
 
         checkIfConneted();
 
@@ -75,13 +79,13 @@ export default function userWs(ws, req) {
         .catch(err => {
             console.error(err);
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(friends === null) {
             return
         }
 
         const friendList = friends[0].map(friend => friend.friendName);
-        global.sockets.filter(socket => friendList.includes(socket.username)).forEach(socket => socket.send(JSON.stringify(['friendOnline', ws.username]), {binary: false}));
+        sockets.filter(socket => friendList.includes(socket.username!)).forEach(socket => socket.send(JSON.stringify(['friendOnline', ws.username]), {binary: false}));
     });
 
     ws.on('message', (data: string) => {
@@ -89,11 +93,7 @@ export default function userWs(ws, req) {
             return
         }
 
-        interface parsedData {
-            data: Array<string>;
-        }
-
-        let parsedData: parsedData;
+        let parsedData: any;
         
         try {
             parsedData = JSON.parse(data);
@@ -128,10 +128,10 @@ export default function userWs(ws, req) {
         }
         console.log('closed');
 
-        global.sockets = global.sockets.filter(user => user.id != ws.id);
+        sockets = sockets.filter(user => user.id != ws.id);
 
         let deletedOnce = false;
-        global.onlineUsers = global.onlineUsers.filter(username => {
+        onlineUsers = onlineUsers.filter(username => {
             if(deletedOnce) {
                 return true
             }
@@ -141,7 +141,7 @@ export default function userWs(ws, req) {
             }
             return true
         });
-        const online = global.onlineUsers.includes(ws.username);
+        const online = onlineUsers.includes(ws.username!);
 
         if(online) {
             return
@@ -151,14 +151,37 @@ export default function userWs(ws, req) {
         .catch(err => {
             console.error(err);
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(friends === null) {
             return
         }
 
         const friendList = friends[0].map(friend => friend.friendName);
-        global.sockets.filter(socket => friendList.includes(socket.username)).forEach(socket => socket.send(JSON.stringify(['friendOffline', ws.username]), {binary: false}));
+        sockets.filter(socket => friendList.includes(socket.username!)).forEach(socket => socket.send(JSON.stringify(['friendOffline', ws.username]), {binary: false}));
 
         console.log('disconnected');
     });
 };
+
+function sendTo(username: string, message: {message: string, username: string, friendName?: string, order: number}) {
+    sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['directMessagesUpdate', message]), {binary: false}));
+}
+
+function updateUsers(username: string, users: {friendName: string, status: string, id: number}[]) {
+    sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', users]), {binary: false}));
+}
+
+function updateOnline(username: string, friendName: string, status: 'friendOnline' | 'friendOffline') {
+    if(!onlineUsers.includes(username) || !onlineUsers.includes(friendName)) {
+        return
+    }
+
+    sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify([status, friendName]), {binary: false}));
+    sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify([status, username]), {binary: false}));
+}
+
+function getOnlineFriends(users: {friendName: string, status: string, id: number}[]) {
+    return users.filter(user => user.status == 'friend').map(user => user.friendName).filter(friendName => onlineUsers.includes(friendName));
+}
+
+export { sendTo, updateUsers, updateOnline, getOnlineFriends }
