@@ -93,7 +93,7 @@ export default function userWs(ws: UserWebSocket, req: IncomingMessage) {
             return
         }
 
-        let parsedData: any;
+        let parsedData;
         
         try {
             parsedData = JSON.parse(data);
@@ -102,15 +102,12 @@ export default function userWs(ws: UserWebSocket, req: IncomingMessage) {
             console.error(err)
             parsedData = null;
         }
-        if(parsedData === null) {
+        if(parsedData === null || typeof parsedData !== "string") {
             return
         }
 
 
-        if(parsedData[0] == 'client ws opened') {  
-            console.log('received: %s', parsedData[0]);
-        }
-        if(parsedData[0] == 'ping') {
+        if(parsedData == 'ping') {
             ws.send(JSON.stringify(['pong', '']));
         }
     });
