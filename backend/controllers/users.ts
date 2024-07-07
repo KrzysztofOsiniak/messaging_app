@@ -173,7 +173,7 @@ export const postSignup = (req: UserRequest, res: Response) => {
 
 
 export const postAddFriend = async (req: UserRequest, res: Response) => {
-if(!req.session.logged) {
+    if(!req.session.logged) {
         return
     }
 
@@ -286,30 +286,62 @@ if(!req.session.logged) {
         }
 
         if(userStatus[0][0].status == 'pending') {
-            const usersFriend = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [friendName, username, 'friend', 0])
-            .catch(err => {
-                console.error(err);
-                pendingRequestOnUsers[friendName] = null;
-                pendingRequestOnUsers[username] = null;
-                res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                return null
-            }) as [UserQueryResult[], FieldPacket[]] | null;
-            if(usersFriend === null) {
-                return
-            }
+            await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+                if(err) {
+                    console.log(err);
+                    return
+                }
+                let failed = false;
+                connection.beginTransaction(err => {
+                    if(err) {
+                        console.log(err);
+                        connection.release();
+                        failed = true;
+                    }
+                });
+                if(failed) {
+                    return
+                }
 
-            const userUpdate = await db.promise().execute(`update friends set status = 'friend' where username = ? and friendName = ?;`, [username, friendName])
-            .catch(err => {
-                console.error(err);
-                pendingRequestOnUsers[friendName] = null;
-                pendingRequestOnUsers[username] = null;
-                res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                return null
-            }) as [UserQueryResult[], FieldPacket[]] | null;
-            if(userUpdate === null) {
-                return
-            }
+                const usersFriend = await connection.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [friendName, username, 'friend', 0])
+                .catch(err => {
+                    console.error(err);
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    connection.rollback(err => {
+                        if(err) {
+                            console.log(err);
+                            connection.release();
+                        }
+                    });
+                    return null
+                }) as [UserQueryResult[], FieldPacket[]] | null;
+                if(usersFriend === null) {
+                    return
+                }
+                const userUpdate = await connection.promise().execute(`update friends set status = 'friend' where username = ? and friendName = ?;`, [username, friendName])
+                .catch(err => {
+                    console.error(err);
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    connection.rollback(err => {
+                        if(err) {
+                            console.log(err);
+                            connection.release();
+                        }
+                    });
+                    return null
+                }) as [UserQueryResult[], FieldPacket[]] | null;
+                if(userUpdate === null) {
+                    return
+                }
 
+                connection.commit();
+                connection.release();
+                resolve();
+            })});
 
             const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
@@ -365,7 +397,7 @@ if(!req.session.logged) {
 }
 
 export const postDeclineFriend = async (req: UserRequest, res: Response) => {
-if(!req.session.logged) {
+    if(!req.session.logged) {
         return
     }
 
@@ -537,29 +569,63 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
     }
     
     if(userStatus[0][0].status == 'friend') {
-        const removeFriendsUser = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
-        .catch(err => {
-            console.error(err);
-            pendingRequestOnUsers[friendName] = null;
-            pendingRequestOnUsers[username] = null;
-            res.status(500).send({status: 500, message: 'Unknown Server Error'});
-            return null
-        }) as [UserQueryResult[], FieldPacket[]] | null;
-        if(removeFriendsUser === null) {
-            return
-        }
+        await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+            if(err) {
+                console.log(err);
+                return
+            }
+            let failed = false;
+            connection.beginTransaction(err => {
+                if(err) {
+                    console.log(err);
+                    connection.release();
+                    failed = true;
+                }
+            });
+            if(failed) {
+                return
+            }
 
-        const removeUsersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
-        .catch(err => {
-            console.error(err);
-            pendingRequestOnUsers[friendName] = null;
-            pendingRequestOnUsers[username] = null;
-            res.status(500).send({status: 500, message: 'Unknown Server Error'});
-            return null
-        }) as [UserQueryResult[], FieldPacket[]] | null;
-        if(removeUsersFriend === null) {
-            return
-        }
+            const removeFriendsUser = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
+            .catch(err => {
+                console.error(err);
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                connection.rollback(err => {
+                    if(err) {
+                        console.log(err);
+                        connection.release();
+                    }
+                });
+                return null
+            }) as [UserQueryResult[], FieldPacket[]] | null;
+            if(removeFriendsUser === null) {
+                return
+            }
+
+            const removeUsersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [username, friendName])
+            .catch(err => {
+                console.error(err);
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                connection.rollback(err => {
+                    if(err) {
+                        console.log(err);
+                        connection.release();
+                    }
+                });
+                return null
+            }) as [UserQueryResult[], FieldPacket[]] | null;
+            if(removeUsersFriend === null) {
+                return
+            }
+
+            connection.commit();
+            connection.release();
+            resolve();
+        })});
 
         const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
         where friends.username = ?;`, [username])
@@ -599,7 +665,7 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
 }
 
 export const postBlock = async (req: UserRequest, res: Response) => {
-if(!req.session.logged) {
+    if(!req.session.logged) {
         return
     }
 
@@ -744,29 +810,63 @@ if(!req.session.logged) {
         }
 
         if(userStatus[0][0].status == 'friend') {
-            const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
-            .catch(err => {
-                console.error(err);
-                pendingRequestOnUsers[friendName] = null;
-                pendingRequestOnUsers[username] = null;
-                res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                return null
-            }) as [UserQueryResult[], FieldPacket[]] | null;
-            if(usersFriend === null) {
-                return
-            }
-
-            const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendName = ?;`, [username, friendName])
-            .catch(err => {
-                console.error(err);
-                pendingRequestOnUsers[friendName] = null;
-                pendingRequestOnUsers[username] = null;
-                res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                return null
-            }) as [UserQueryResult[], FieldPacket[]] | null;
-            if(userUpdate === null) {
-                return
-            }
+            await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+                if(err) {
+                    console.log(err);
+                    return
+                }
+                let failed = false;
+                connection.beginTransaction(err => {
+                    if(err) {
+                        console.log(err);
+                        connection.release();
+                        failed = true;
+                    }
+                });
+                if(failed) {
+                    return
+                }
+    
+                const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
+                .catch(err => {
+                    console.error(err);
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    connection.rollback(err => {
+                        if(err) {
+                            console.log(err);
+                            connection.release();
+                        }
+                    });
+                    return null
+                }) as [UserQueryResult[], FieldPacket[]] | null;
+                if(usersFriend === null) {
+                    return
+                }
+    
+                const userUpdate = await db.promise().execute(`update friends set status = 'blocked' where username = ? and friendName = ?;`, [username, friendName])
+                .catch(err => {
+                    console.error(err);
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    connection.rollback(err => {
+                        if(err) {
+                            console.log(err);
+                            connection.release();
+                        }
+                    });
+                    return null
+                }) as [UserQueryResult[], FieldPacket[]] | null;
+                if(userUpdate === null) {
+                    return
+                }
+    
+                connection.commit();
+                connection.release();
+                resolve();
+            })});
 
             const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
@@ -836,29 +936,63 @@ if(!req.session.logged) {
         }
 
         if(friendStatus[0][0].status == 'pending') {
-            const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
-            .catch(err => {
-                console.error(err);
-                pendingRequestOnUsers[friendName] = null;
-                pendingRequestOnUsers[username] = null;
-                res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                return null
-            }) as [UserQueryResult[], FieldPacket[]] | null;
-            if(usersFriend === null) {
-                return
-            }
-
-            const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [username, friendName, 'blocked', 0])
-            .catch(err => {
-                console.error(err);
-                pendingRequestOnUsers[friendName] = null;
-                pendingRequestOnUsers[username] = null;
-                res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                return null
-            }) as [UserQueryResult[], FieldPacket[]] | null;
-            if(request === null) {
-                return
-            }
+            await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+                if(err) {
+                    console.log(err);
+                    return
+                }
+                let failed = false;
+                connection.beginTransaction(err => {
+                    if(err) {
+                        console.log(err);
+                        connection.release();
+                        failed = true;
+                    }
+                });
+                if(failed) {
+                    return
+                }
+    
+                const usersFriend = await db.promise().execute(`delete from friends where username = ? and friendName = ?;`, [friendName, username])
+                .catch(err => {
+                    console.error(err);
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    connection.rollback(err => {
+                        if(err) {
+                            console.log(err);
+                            connection.release();
+                        }
+                    });
+                    return null
+                }) as [UserQueryResult[], FieldPacket[]] | null;
+                if(usersFriend === null) {
+                    return
+                }
+    
+                const request = await db.promise().execute(`INSERT INTO friends(username, friendName, status, notification) VALUES(?, ?, ?, ?);`, [username, friendName, 'blocked', 0])
+                .catch(err => {
+                    console.error(err);
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    connection.rollback(err => {
+                        if(err) {
+                            console.log(err);
+                            connection.release();
+                        }
+                    });
+                    return null
+                }) as [UserQueryResult[], FieldPacket[]] | null;
+                if(request === null) {
+                    return
+                }
+    
+                connection.commit();
+                connection.release();
+                resolve();
+            })});
 
             const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
@@ -885,7 +1019,7 @@ if(!req.session.logged) {
 }
 
 export const postUnBlock = async (req: UserRequest, res: Response) => {
-if(!req.session.logged) {
+    if(!req.session.logged) {
         return
     }
 
