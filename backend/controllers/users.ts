@@ -50,6 +50,14 @@ export const postLogin = (req: UserRequest, res: Response) => {
     }
     req.session.pending = true;
     setTimeout(async () => {
+        if(!req.body.username || !req.body.password) {
+            req.session.destroy(() => {});
+            return
+        }
+        if(typeof req.body.username !== 'string' || typeof req.body.password !== 'string') {
+            req.session.destroy(() => {});
+            return
+        }
         const username = req.body.username.trim();
         const password = req.body.password;
 
@@ -113,6 +121,14 @@ export const postSignup = (req: UserRequest, res: Response) => {
     }
     req.session.pending = true;
     setTimeout(async () => {
+        if(!req.body.username || !req.body.password) {
+            req.session.destroy(() => {});
+            return
+        }
+        if(typeof req.body.username !== 'string' || typeof req.body.password !== 'string') {
+            req.session.destroy(() => {});
+            return
+        }
         const username = req.body.username.trim();
         const password = req.body.password;
         const regtest = new RegExp(/[^ -~]/g);
@@ -177,12 +193,14 @@ export const postAddFriend = async (req: UserRequest, res: Response) => {
         return
     }
 
-    const username = req.session.username as string;
-    const friendName = req.body.friendName;
-
-    if(typeof friendName !== 'string') {
+    if(!req.body.friendName) {
         return
     }
+    if(typeof req.body.friendName !== 'string') {
+        return
+    }
+    const username = req.session.username as string;
+    const friendName = req.body.friendName;
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -401,12 +419,14 @@ export const postDeclineFriend = async (req: UserRequest, res: Response) => {
         return
     }
 
-    const username = req.session.username as string;
-    const friendName = req.body.friendName;
-
-    if(typeof friendName !== 'string') {
+    if(!req.body.friendName) {
         return
     }
+    if(typeof req.body.friendName !== 'string') {
+        return
+    }
+    const username = req.session.username as string;
+    const friendName = req.body.friendName;
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -505,12 +525,14 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
         return
     }
 
-    const username = req.session.username as string;
-    const friendName = req.body.friendName;
-
-    if(typeof friendName !== 'string') {
+    if(!req.body.friendName) {
         return
     }
+    if(typeof req.body.friendName !== 'string') {
+        return
+    }
+    const username = req.session.username as string;
+    const friendName = req.body.friendName;
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -669,12 +691,14 @@ export const postBlock = async (req: UserRequest, res: Response) => {
         return
     }
 
-    const username = req.session.username as string;
-    const friendName = req.body.friendName;
-
-    if(typeof friendName !== 'string') {
+    if(!req.body.friendName) {
         return
     }
+    if(typeof req.body.friendName !== 'string') {
+        return
+    }
+    const username = req.session.username as string;
+    const friendName = req.body.friendName;
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -1023,12 +1047,14 @@ export const postUnBlock = async (req: UserRequest, res: Response) => {
         return
     }
 
-    const username = req.session.username as string;
-    const friendName = req.body.friendName;
-
-    if(typeof friendName !== 'string') {
+    if(!req.body.friendName) {
         return
     }
+    if(typeof req.body.friendName !== 'string') {
+        return
+    }
+    const username = req.session.username as string;
+    const friendName = req.body.friendName;
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});

@@ -152,7 +152,7 @@ export const postDirect = async (req: UserRequest, res: Response) => {
         res.status(400).send({status: 400, message: 'Bad Request'});
         return
     }
-    if(!req.body.message.trim()) {
+    if(typeof req.body.message !== 'string') {
         res.status(400).send({status: 400, message: 'Bad Request'});
         return
     }
