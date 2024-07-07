@@ -27,9 +27,11 @@
     padding-left: 4rem;
     padding-top: 1rem;
     padding-bottom: 1rem;
+    padding-right: 1rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    word-break: break-all;
     &:hover {
         background-color: rgba(43, 45, 48, 0.6);
     }

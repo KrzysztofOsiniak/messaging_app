@@ -1,10 +1,39 @@
 import db from '../database.js'
 import bcrypt from 'bcrypt'
+import * as wsFunctions from '../ws.js'
 
+import type { Request, Response } from 'express'
+import type { Session } from 'express-session'
+import type { QueryResult, FieldPacket, ResultSetHeader } from 'mysql2';
 
-let pendingRequestOnUsers:{[key: string]: string} = {};
+type UserSession = Session & {
+    logged?: boolean
+    pending?: boolean
+    userId?: number
+    username?: string
+}
+type UserRequest = Request & {
+    session: UserSession
+}
 
-export const getLogged = (req, res) => {
+type UserQueryResult = QueryResult & {
+    username: string
+    friendName: string
+    id: number
+    messagesId: number
+    password: string
+    status: string
+}
+
+interface User {
+    friendName: string
+    status: string
+    id: number
+}
+
+let pendingRequestOnUsers:{[key: string]: string | null} = {};
+
+export const getLogged = (req: UserRequest, res: Response) => {
     if(req.session.logged) {
         res.status(200).send({logged: true, username: req.session.username});
         return
@@ -12,7 +41,7 @@ export const getLogged = (req, res) => {
     res.status(401).send({logged: false});
 }
 
-export const postLogin = (req, res) => {
+export const postLogin = (req: UserRequest, res: Response) => {
     if(req.session.pending) {
         return
     }
@@ -25,7 +54,7 @@ export const postLogin = (req, res) => {
         const password = req.body.password;
 
         if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) ) {
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(400).send({status: 400, message: 'not sent'});
             return
         }
@@ -33,16 +62,16 @@ export const postLogin = (req, res) => {
         const user = await db.promise().execute(`SELECT * FROM users WHERE username = ?;`, [username])
         .catch(err => {
             console.error(err);
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(500).send({status: 500, message: 'not sent'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(user === null) {
             return
         }
 
         if(!user[0][0]) {
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(400).send({status: 400, message: 'wrong username or password'});
             return
         }
@@ -52,7 +81,7 @@ export const postLogin = (req, res) => {
         .then(result => result)
         .catch(err => {
             console.error(err);
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(500).send({status: 500, message: 'not sent'});
             return null
         });
@@ -61,7 +90,7 @@ export const postLogin = (req, res) => {
         }
         
         if(!result) {
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(400).send({status: 400, message: 'wrong username or password'});
             return
         }
@@ -75,7 +104,7 @@ export const postLogin = (req, res) => {
 };
 
 
-export const postSignup = (req, res) => {
+export const postSignup = (req: UserRequest, res: Response) => {
     if(req.session.pending) {
         return
     }
@@ -89,7 +118,7 @@ export const postSignup = (req, res) => {
         const regtest = new RegExp(/[^ -~]/g);
 
         if( ((password.length > 29) || (username.length > 19)) || (!password.length || !username.length) || (regtest.test(username)) ) {
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(400).send({status: 400, message: 'not sent'});
             return
         }
@@ -97,16 +126,16 @@ export const postSignup = (req, res) => {
         const user = await db.promise().execute(`SELECT * FROM users WHERE USERNAME = ?;`, [username])
         .catch(err => {
             console.error(err);
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(500).send({status: 500, message: 'not sent'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(user === null) {
             return
         }
 
         if(user[0][0]) {
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(400).send({status: 400, message: 'user already exists'});
             return
         }
@@ -115,7 +144,7 @@ export const postSignup = (req, res) => {
         .then(hash => hash)
         .catch(err => {
             console.error(err);
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(500).send({status: 500, message: 'not sent'});
             return null
         });
@@ -126,10 +155,10 @@ export const postSignup = (req, res) => {
         const result = await db.promise().execute(`INSERT INTO users(username, password) VALUES(?, ?);`, [username, hash])
         .catch(err => {
             console.error(err);
-            req.session.destroy();
+            req.session.destroy(() => {});
             res.status(500).send({status: 500, message: 'not sent'});
             return null
-        });
+        }) as [ResultSetHeader, FieldPacket[]] | null;
         if(result === null) {
             return
         }
@@ -143,13 +172,17 @@ export const postSignup = (req, res) => {
 };
 
 
-export const postAddFriend = async (req, res) => {
+export const postAddFriend = async (req: UserRequest, res: Response) => {
 if(!req.session.logged) {
         return
     }
 
-    const username = req.session.username;
+    const username = req.session.username as string;
     const friendName = req.body.friendName;
+
+    if(typeof friendName !== 'string') {
+        return
+    }
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -176,7 +209,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friendExists === null) {
         return
     }
@@ -195,7 +228,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(userStatus === null) {
         return
     }
@@ -207,7 +240,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friendStatus === null) {
         return
     }
@@ -220,7 +253,7 @@ if(!req.session.logged) {
             pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(request === null) {
             return
         }
@@ -231,12 +264,12 @@ if(!req.session.logged) {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [User[], FieldPacket[]] | null;
         if(usersForFriend === null) {
             return
         }
 
-        global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+        wsFunctions.updateUsers(friendName, usersForFriend[0]);
 
         pendingRequestOnUsers[friendName] = null;
         pendingRequestOnUsers[username] = null;
@@ -260,7 +293,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersFriend === null) {
                 return
             }
@@ -272,7 +305,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(userUpdate === null) {
                 return
             }
@@ -284,7 +317,7 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersForUser === null) {
                 return
             }
@@ -295,18 +328,15 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [User[], FieldPacket[]] | null;
             if(usersForFriend === null) {
                 return
             }
 
-            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
-            global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+            wsFunctions.updateUsers(username, usersForUser[0]);
+            wsFunctions.updateUsers(friendName, usersForFriend[0]);
 
-            if(global.onlineUsers.includes(username) && global.onlineUsers.includes(friendName)) {
-                global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOnline', friendName]), {binary: false}));
-                global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOnline', username]), {binary: false}));
-            }
+            wsFunctions.updateOnline(username, friendName, 'friendOnline');
 
             pendingRequestOnUsers[friendName] = null;
             pendingRequestOnUsers[username] = null;
@@ -334,13 +364,17 @@ if(!req.session.logged) {
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
-export const postDeclineFriend = async (req, res) => {
+export const postDeclineFriend = async (req: UserRequest, res: Response) => {
 if(!req.session.logged) {
         return
     }
 
-    const username = req.session.username
+    const username = req.session.username as string;
     const friendName = req.body.friendName;
+
+    if(typeof friendName !== 'string') {
+        return
+    }
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -367,7 +401,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friendExists === null) {
         return
     }
@@ -386,7 +420,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(userStatus === null) {
         return
     }
@@ -406,7 +440,7 @@ if(!req.session.logged) {
             pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(removeRequest === null) {
             return
         }
@@ -417,12 +451,12 @@ if(!req.session.logged) {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(usersForUser === null) {
             return
         }
 
-        global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+        wsFunctions.updateUsers(username, usersForUser[0]);
 
         pendingRequestOnUsers[friendName] = null;
         pendingRequestOnUsers[username] = null;
@@ -434,13 +468,17 @@ if(!req.session.logged) {
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
-export const postRemoveFriend = async (req, res) => {
-if(!req.session.logged) {
+export const postRemoveFriend = async (req: UserRequest, res: Response) => {
+    if(!req.session.logged) {
         return
     }
 
-    const username = req.session.username
+    const username = req.session.username as string;
     const friendName = req.body.friendName;
+
+    if(typeof friendName !== 'string') {
+        return
+    }
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -467,7 +505,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friendExists === null) {
         return
     }
@@ -486,7 +524,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(userStatus === null) {
         return
     }
@@ -506,7 +544,7 @@ if(!req.session.logged) {
             pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(removeFriendsUser === null) {
             return
         }
@@ -518,7 +556,7 @@ if(!req.session.logged) {
             pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(removeUsersFriend === null) {
             return
         }
@@ -529,7 +567,7 @@ if(!req.session.logged) {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(usersForUser === null) {
             return
         }
@@ -540,18 +578,15 @@ if(!req.session.logged) {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [User[], FieldPacket[]] | null;
         if(usersForFriend === null) {
             return
         }
 
-        global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
-        global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+        wsFunctions.updateUsers(username, usersForUser[0]);
+        wsFunctions.updateUsers(friendName, usersForFriend[0]);
 
-        if(global.onlineUsers.includes(username) && global.onlineUsers.includes(friendName)) {
-            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
-            global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
-        }
+        wsFunctions.updateOnline(friendName, username, 'friendOffline');
 
         pendingRequestOnUsers[friendName] = null;
         pendingRequestOnUsers[username] = null;
@@ -563,13 +598,17 @@ if(!req.session.logged) {
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
-export const postBlock = async (req, res) => {
+export const postBlock = async (req: UserRequest, res: Response) => {
 if(!req.session.logged) {
         return
     }
 
-    const username = req.session.username
+    const username = req.session.username as string;
     const friendName = req.body.friendName;
+
+    if(typeof friendName !== 'string') {
+        return
+    }
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -596,7 +635,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friendExists === null) {
         return
     }
@@ -615,7 +654,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(userStatus === null) {
         return
     }
@@ -627,7 +666,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friendStatus === null) {
         return
     }
@@ -640,7 +679,7 @@ if(!req.session.logged) {
             pendingRequestOnUsers[username] = null;
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(request === null) {
             return
         }
@@ -651,12 +690,12 @@ if(!req.session.logged) {
             console.error(err);
             res.status(500).send({status: 500, message: 'Unknown Server Error'});
             return null
-        });
+        }) as [UserQueryResult[], FieldPacket[]] | null;
         if(usersForUser === null) {
             return
         }
 
-        global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+        wsFunctions.updateUsers(username, usersForUser[0]);
 
         pendingRequestOnUsers[friendName] = null;
         pendingRequestOnUsers[username] = null;
@@ -680,7 +719,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(userUpdate === null) {
                 return
             }
@@ -691,12 +730,12 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersForUser === null) {
                 return
             }
 
-            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            wsFunctions.updateUsers(username, usersForUser[0]);
 
             pendingRequestOnUsers[friendName] = null;
             pendingRequestOnUsers[username] = null;
@@ -712,7 +751,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersFriend === null) {
                 return
             }
@@ -724,7 +763,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(userUpdate === null) {
                 return
             }
@@ -735,7 +774,7 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersForUser === null) {
                 return
             }
@@ -746,18 +785,15 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [User[], FieldPacket[]] | null;
             if(usersForFriend === null) {
                 return
             }
 
-            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
-            global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['users', usersForFriend[0]]), {binary: false}));
+            wsFunctions.updateUsers(username, usersForUser[0]);
+            wsFunctions.updateUsers(friendName, usersForFriend[0]);
 
-            if(global.onlineUsers.includes(username) && global.onlineUsers.includes(friendName)) {
-                global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['friendOffline', friendName]), {binary: false}));
-                global.sockets.filter(socket => socket.username == friendName).forEach(socket => socket.send(JSON.stringify(['friendOffline', username]), {binary: false}));
-            }
+            wsFunctions.updateOnline(username, friendName, 'friendOffline');
 
             pendingRequestOnUsers[friendName] = null;
             pendingRequestOnUsers[username] = null;
@@ -775,7 +811,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(request === null) {
                 return
             }
@@ -786,12 +822,12 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersForUser === null) {
                 return
             }
 
-            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            wsFunctions.updateUsers(username, usersForUser[0]);
 
             pendingRequestOnUsers[friendName] = null;
             pendingRequestOnUsers[username] = null;
@@ -807,7 +843,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersFriend === null) {
                 return
             }
@@ -819,7 +855,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(request === null) {
                 return
             }
@@ -830,12 +866,12 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersForUser === null) {
                 return
             }
 
-            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            wsFunctions.updateUsers(username, usersForUser[0]);
 
             pendingRequestOnUsers[friendName] = null;
             pendingRequestOnUsers[username] = null;
@@ -848,13 +884,17 @@ if(!req.session.logged) {
     res.status(400).send({status: 400, message: 'Bad Request'});
 }
 
-export const postUnBlock = async (req, res) => {
+export const postUnBlock = async (req: UserRequest, res: Response) => {
 if(!req.session.logged) {
         return
     }
 
-    const username = req.session.username
+    const username = req.session.username as string;
     const friendName = req.body.friendName;
+
+    if(typeof friendName !== 'string') {
+        return
+    }
 
     if(friendName == username) {
         res.status(400).send({status: 400, message: 'Incorrect Username'});
@@ -881,7 +921,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(friendExists === null) {
         return
     }
@@ -900,7 +940,7 @@ if(!req.session.logged) {
         pendingRequestOnUsers[username] = null;
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [UserQueryResult[], FieldPacket[]] | null;
     if(userStatus === null) {
         return
     }
@@ -914,7 +954,7 @@ if(!req.session.logged) {
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(removeBlock === null) {
                 return
             }
@@ -925,12 +965,12 @@ if(!req.session.logged) {
                 console.error(err);
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
                 return null
-            });
+            }) as [UserQueryResult[], FieldPacket[]] | null;
             if(usersForUser === null) {
                 return
             }
 
-            global.sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', usersForUser[0]]), {binary: false}));
+            wsFunctions.updateUsers(username, usersForUser[0]);
 
             pendingRequestOnUsers[friendName] = null;
             pendingRequestOnUsers[username] = null;
@@ -944,7 +984,7 @@ if(!req.session.logged) {
     res.status(400).send({status: 400, message: 'User Not Blocked'});
 }
 
-export const getFriends = async (req, res) => {
+export const getFriends = async (req: UserRequest, res: Response) => {
     if(!req.session.logged) {
         res.status(401).send({status: 401, message: 'Not Logged In'});
         return
@@ -956,11 +996,11 @@ export const getFriends = async (req, res) => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
         return null
-    });
+    }) as [User[], FieldPacket[]] | null;
     if(friends === null) {
         return
     }
 
-    const onlineFriends = friends[0].filter(user => user.status == 'friend').map(user => user.friendName).filter(friendName => global.onlineUsers.includes(friendName));
+    const onlineFriends = wsFunctions.getOnlineFriends(friends[0]);
     res.status(200).send({friends: friends[0], status: 200, onlineFriends});
 }

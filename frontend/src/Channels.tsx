@@ -156,7 +156,7 @@ export default function Channels() {
                 return setTimeout(checkIfConneted, 4 * 1000);
             }
 
-            ws.current.send(JSON.stringify(['ping', '']));
+            ws.current.send(JSON.stringify('ping'));
             
             await new Promise<void>(resolve => {
                 setTimeout(() => {
