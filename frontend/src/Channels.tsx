@@ -48,9 +48,6 @@ export default function Channels() {
 
 
     useEffect(() => {
-        /*
-            on fetch fail
-        */
         const CONNECTING = 0;
         /*
             const OPEN = 1;

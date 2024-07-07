@@ -33,6 +33,15 @@ interface User {
 
 let pendingRequestOnUsers:{[key: string]: string | null} = {};
 
+export const postLogout = (req: UserRequest, res: Response) => {
+    if(req.session.logged) {
+        req.session.destroy(() => {});
+        res.status(200).send({status: 200, message: 'logged out'});
+        return
+    }
+    res.status(401).send({status: 401, logged: false});
+}
+
 export const getLogged = (req: UserRequest, res: Response) => {
     if(req.session.logged) {
         res.status(200).send({logged: true, username: req.session.username});

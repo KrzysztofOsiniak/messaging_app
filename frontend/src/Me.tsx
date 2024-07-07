@@ -2,7 +2,7 @@ import { Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import styles from './styles/Me.module.scss'
 import { useEffect, useRef, useState } from "react";
 import menuImg from "./img/menu.svg";
-
+import logoutImg from "./img/logout.svg"
 
 export default function Me() {
     const { username, users, onlineFriends, directMessagesUpdate, allDirect, shouldUpdate, setShouldUpdate } = useOutletContext() as { username: string, users: { friendName: string, status: string, id: number}[],
@@ -40,6 +40,19 @@ export default function Me() {
         return setMenuActive((menuActive: any) => menuActive ? 0 : 1);
     }
 
+    async function handleLogout() {
+        const { status } = await fetch(`http://localhost:8080/users/logout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json());
+        if(status == 200) {
+            navigate(0);
+        }
+    }
+
     useEffect(() => {
         if(!isMounted.current) {
             isMounted.current = 1;
@@ -61,6 +74,10 @@ export default function Me() {
                     <span className={styles.directMessagesText}> Direct Messages </span>
                 </div>
                 <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
+                <div className={styles.userBox}>
+                    <span className={styles.username} title={username}>{username}</span>
+                    <span className={styles.logout} title="logout" onClick={handleLogout}> <img src={logoutImg}/> </span>
+                </div>
             </nav>
             <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, setActive: setActive,
                 shouldUpdate: shouldUpdate, setShouldUpdate: setShouldUpdate } } />
@@ -76,6 +93,10 @@ export default function Me() {
                     <span className={styles.directMessagesText}> Direct Messages </span>
                 </div>
                 <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
+                <div className={styles.userBox}>
+                    <span className={styles.username} title={username}>{username}</span>
+                    <span className={styles.logout} title="logout" onClick={handleLogout}> <img src={logoutImg}/> </span>
+                </div>
             </nav>
             <Outlet context={ {username: username, users: users, onlineFriends: onlineFriends, directMessagesUpdate: directMessagesUpdate, setActive: setActive,
                 shouldUpdate: shouldUpdate, setShouldUpdate: setShouldUpdate, menuActive: menuActive, setMenuActive: setMenuActive } } />

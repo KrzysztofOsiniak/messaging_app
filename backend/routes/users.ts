@@ -1,10 +1,12 @@
 import express from 'express'
 
-import {getFriends, getLogged, postAddFriend, postBlock, postDeclineFriend, postLogin, postRemoveFriend, postSignup, postUnBlock} from '../controllers/users.js'
+import {getFriends, getLogged, postAddFriend, postBlock, postDeclineFriend, postLogin, postLogout, postRemoveFriend, postSignup, postUnBlock} from '../controllers/users.js'
 
 const router = express.Router();
 
 router.get('/logged', getLogged);
+
+router.post('/logout', postLogout);
 
 router.post('/login', postLogin);
 

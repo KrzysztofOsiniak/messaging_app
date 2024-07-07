@@ -1,9 +1,19 @@
-import { useLoaderData, useOutletContext, useParams } from "react-router-dom";
+import { useLoaderData, useOutletContext, useParams, redirect } from "react-router-dom";
 import styles from './styles/Direct.module.scss'
 import { useEffect, useMemo, useRef, useState } from "react";
 import menuImg from "./img/menu.svg";
 
 export async function loader(id: any) {
+    const { logged } = await fetch('http://localhost:8080/users/logged', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json());
+    if(!logged) {
+        return redirect('/')
+    }
     const userId = parseInt(id) as number;
 
     const {friendName, messages, status, message} = await fetch(`http://localhost:8080/direct/${userId}`, {
