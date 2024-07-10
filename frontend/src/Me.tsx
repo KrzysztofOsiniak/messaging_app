@@ -73,7 +73,9 @@ export default function Me() {
                 <div className={styles.directMessagesTextBox}>
                     <span className={styles.directMessagesText}> Direct Messages </span>
                 </div>
-                <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
+                <div className={styles.chatWrapper}>
+                    <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
+                </div>
                 <div className={styles.userBox}>
                     <span className={styles.username} title={username}>{username}</span>
                     <span className={styles.logout} title="logout" onClick={handleLogout}> <img src={logoutImg}/> </span>
@@ -92,7 +94,9 @@ export default function Me() {
                 <div className={styles.directMessagesTextBox}>
                     <span className={styles.directMessagesText}> Direct Messages </span>
                 </div>
-                <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
+                <div className={styles.chatWrapper}>
+                    <Chats allDirect={allDirect} active={active} handleClick={handleClick} onlineFriends={onlineFriends} />
+                </div>
                 <div className={styles.userBox}>
                     <span className={styles.username} title={username}>{username}</span>
                     <span className={styles.logout} title="logout" onClick={handleLogout}> <img src={logoutImg}/> </span>
