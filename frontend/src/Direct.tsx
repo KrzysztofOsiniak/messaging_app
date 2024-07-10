@@ -45,6 +45,7 @@ export default function Direct() {
 
     const isMounted = useRef(false) as any;
     const shouldScroll = useRef(false) as any;
+    const updating = useRef(false) as any;
 
     const { id }  = useParams() as any;
     const userId = parseInt(id) as number;
@@ -59,6 +60,10 @@ export default function Direct() {
 
     async function updateMessages() {
         setShouldUpdate(false);
+        if(updating.current || !shouldUpdate) {
+            return
+        }
+        updating.current = true;
         const { messages, status, message } = await fetch(`http://localhost:8080/direct/${userId}`, {
             method: 'GET',
             headers: {
@@ -70,6 +75,7 @@ export default function Direct() {
             throw new Error(message);
         }
         setDirectMessages(messages);
+        updating.current = false;
     }
 
     async function handleBlock(e: any) {

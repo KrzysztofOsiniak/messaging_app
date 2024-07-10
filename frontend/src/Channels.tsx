@@ -61,7 +61,6 @@ export default function Channels() {
         function initiate() {
             ws.current.onopen = () => {
                 console.log("ws opened");
-                ws.current.send(JSON.stringify(['client ws opened', '']));
                 if(reconnecting) {
                     updateData();
                     setShouldUpdate(true)
