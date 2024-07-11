@@ -46,7 +46,8 @@ CREATE TABLE `directmessages` (
   `id` varchar(128) COLLATE utf8mb4_bin NOT NULL,
   `username` varchar(20) COLLATE utf8mb4_bin NOT NULL,
   `message` mediumtext COLLATE utf8mb4_bin NOT NULL,
-  `order` int(11) NOT NULL
+  `order` int(11) NOT NULL,
+  `date` BIGINT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 -- --------------------------------------------------------

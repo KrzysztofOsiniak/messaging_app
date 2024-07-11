@@ -53,7 +53,7 @@ export const getDirect = async (req: UserRequest, res: Response) => {
     const username = req.session.username as string;
     const friendName = friend[0][0].username;
 
-    const messages = await db.promise().execute(`select directmessages.username, directmessages.message, directmessages.order from directmessages inner join direct
+    const messages = await db.promise().execute(`select directmessages.username, directmessages.message, directmessages.order, directmessages.date from directmessages inner join direct
     on directmessages.id = direct.messagesId where direct.username = ? and direct.friendName = ? order by directmessages.order desc;`, [username, friendName])
     .catch(err => {
         console.error(err);
@@ -206,7 +206,7 @@ export const postDirect = async (req: UserRequest, res: Response) => {
 
     const message = req.body.message;
 
-    const createDirectMessage = await db.promise().execute(`insert into directmessages(id, username, message) values(?, ?, ?);`, [messagesId, username, message])
+    const createDirectMessage = await db.promise().execute(`insert into directmessages(id, username, message, date) values(?, ?, ?, UNIX_TIMESTAMP());`, [messagesId, username, message])
     .catch(err => {
         console.error(err);
         res.status(500).send({status: 500, message: 'Unknown Server Error'});
@@ -217,8 +217,8 @@ export const postDirect = async (req: UserRequest, res: Response) => {
     }
     const order = createDirectMessage[0].insertId;
 
-    wsFunctions.sendTo(username, {message: message, username: username, friendName: friendName, order: order});
-    wsFunctions.sendTo(friendName, {message: message, username: username, order: order});
+    wsFunctions.sendTo(username, {message: message, username: username, friendName: friendName, order: order, date: Math.floor(Date.now() / 1000)});
+    wsFunctions.sendTo(friendName, {message: message, username: username, order: order, date: Math.floor(Date.now() / 1000)});
 
     res.status(200).send({status: 200, message: 'Message Sent'});
 }

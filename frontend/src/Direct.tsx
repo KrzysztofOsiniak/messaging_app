@@ -32,10 +32,10 @@ export async function loader(id: any) {
 
 export default function Direct() {
     const { onlineFriends, username, directMessagesUpdate, setActive, shouldUpdate, setShouldUpdate, users, menuActive, setMenuActive } = useOutletContext() as { onlineFriends: string[], username: string,
-    directMessagesUpdate: {username: string, message: string, order: number}, setActive: any, shouldUpdate: boolean, setShouldUpdate: any, users: { friendName: string, status: string, id: number}[],
-    menuActive: number, setMenuActive: any };
+    directMessagesUpdate: {username: string, message: string, order: number, date: number}, setActive: any, shouldUpdate: boolean, setShouldUpdate: any, users: { friendName: string, status: string, id: number}[],
+    menuActive: number | undefined, setMenuActive: any };
 
-    const { friendName, messages } = useLoaderData() as { friendName: string, messages: {username: string, message: string, order: number}[] };
+    const { friendName, messages } = useLoaderData() as { friendName: string, messages: {username: string, message: string, order: number, date: number}[] };
 
     const [directMessages, setDirectMessages] = useState(messages);
 
@@ -128,7 +128,7 @@ export default function Direct() {
     }
 
     useEffect(() => {
-        const messagesContainer = document.getElementById('messagesContainer') as any;
+        const messagesContainer = typeof menuActive == 'undefined' ? document.getElementById('messagesContainer') : document.getElementById('messagesContainerMobile') as any;
         if(!isMounted.current) {
             messagesContainer.scrollTop = getMaxScroll(messagesContainer);
             isMounted.current = true;
@@ -151,7 +151,7 @@ export default function Direct() {
 
     useEffect(() => {
         if(shouldScroll.current) {
-            const messagesContainer = document.getElementById('messagesContainer') as any;
+            const messagesContainer = typeof menuActive == 'undefined' ? document.getElementById('messagesContainer') : document.getElementById('messagesContainerMobile') as any;
             shouldScroll.current = false;
             messagesContainer.scrollTop = getMaxScroll(messagesContainer);
         }
@@ -176,7 +176,7 @@ export default function Direct() {
             <button className={`${styles.blockButton} ${!friendIsBlocked ? styles.active : ''}`} onClick={handleBlock}> {friendIsBlocked ? 'User Blocked' : 'Block User'} </button>
         </header>
 
-        <div className={styles.messagesContainer} id="messagesContainer">
+        <div className={styles.messagesContainer} id={typeof menuActive == 'undefined' ? 'messagesContainer' : 'messagesContainerMobile'}>
             <Messages directMessages={directMessages} />
         </div>
 
@@ -190,16 +190,36 @@ export default function Direct() {
     )
 }
 
-function Messages({ directMessages }: { directMessages: {username: string, message: string, order: number}[] }) {
+function Messages({ directMessages }: { directMessages: {username: string, message: string, order: number, date: number}[] }) {
+    const currentDate = new Date();
     const messagesList = directMessages.sort((a, b) => a.order - b.order)
-    .map(message => 
+    .map(message => {
+        let date;
+        const messageDate = new Date(message.date * 1000);
+        if(messageDate.getMonth() == currentDate.getMonth() && messageDate.getFullYear() == currentDate.getFullYear()) {
+            if(currentDate.getDate() - messageDate.getDate() == 1) {
+                date = `Yesterday at ${messageDate.getHours() < 10 ? '0' : ''}${messageDate.getHours()}:${messageDate.getMinutes() < 10 ? '0' : ''}${messageDate.getMinutes()}`;
+            }
+            if(currentDate.getDate() - messageDate.getDate() == 0) {
+                date = `Today at ${messageDate.getHours() < 10 ? '0' : ''}${messageDate.getHours()}:${messageDate.getMinutes() < 10 ? '0' : ''}${messageDate.getMinutes()}`;
+            }
+        }
+        else {
+            date = `${messageDate.getDate() < 10 ? '0' : ''}${messageDate.getDate()}/${messageDate.getMonth()+1 < 10 ? '0' : ''}${messageDate.getMonth()+1}/${messageDate.getFullYear()} 
+            ${messageDate.getHours() < 10 ? '0' : ''}${messageDate.getHours()}:${messageDate.getMinutes() < 10 ? '0' : ''}${messageDate.getMinutes()}`;
+        }
+        return (
         <div key={message.order} className={styles.messageContainer}>
-            <div className={styles.usernameText}>
-                {message.username}
+            <div>
+                <span className={styles.usernameText}> {message.username} </span>
+                <span className={styles.dateText}> {date} </span>
             </div>
+            
             <div className={styles.messageText} >
                 {message.message}
             </div>
-        </div>)
+        </div>
+        )
+    })
     return <>{messagesList}</>
 }

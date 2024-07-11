@@ -160,7 +160,7 @@ export default function userWs(ws: UserWebSocket, req: IncomingMessage) {
     });
 };
 
-function sendTo(username: string, message: {message: string, username: string, friendName?: string, order: number}) {
+function sendTo(username: string, message: {message: string, username: string, friendName?: string, order: number, date: number}) {
     sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['directMessagesUpdate', message]), {binary: false}));
 }
 
