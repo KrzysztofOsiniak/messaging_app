@@ -208,6 +208,10 @@ function Messages({ directMessages }: { directMessages: {username: string, messa
                 ${messageDate.getHours() < 10 ? '0' : ''}${messageDate.getHours()}:${messageDate.getMinutes() < 10 ? '0' : ''}${messageDate.getMinutes()}`;
             }
         }
+        else {
+            date = `${messageDate.getDate() < 10 ? '0' : ''}${messageDate.getDate()}/${messageDate.getMonth()+1 < 10 ? '0' : ''}${messageDate.getMonth()+1}/${messageDate.getFullYear()} 
+            ${messageDate.getHours() < 10 ? '0' : ''}${messageDate.getHours()}:${messageDate.getMinutes() < 10 ? '0' : ''}${messageDate.getMinutes()}`;
+        }
         return (
         <div key={message.order} className={styles.messageContainer}>
             <div>
