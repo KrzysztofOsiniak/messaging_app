@@ -59,6 +59,10 @@ export const postLogin = (req: UserRequest, res: Response) => {
     }
     req.session.pending = true;
     setTimeout(async () => {
+        if(!req.body) {
+            req.session.destroy(() => {});
+            return
+        }
         if(!req.body.username || !req.body.password) {
             req.session.destroy(() => {});
             return
@@ -130,6 +134,10 @@ export const postSignup = (req: UserRequest, res: Response) => {
     }
     req.session.pending = true;
     setTimeout(async () => {
+        if(!req.body) {
+            req.session.destroy(() => {});
+            return
+        }
         if(!req.body.username || !req.body.password) {
             req.session.destroy(() => {});
             return
@@ -202,6 +210,9 @@ export const postAddFriend = async (req: UserRequest, res: Response) => {
         return
     }
 
+    if(!req.body) {
+        return
+    }
     if(!req.body.friendName) {
         return
     }
@@ -428,6 +439,9 @@ export const postDeclineFriend = async (req: UserRequest, res: Response) => {
         return
     }
 
+    if(!req.body) {
+        return
+    }
     if(!req.body.friendName) {
         return
     }
@@ -534,6 +548,9 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
         return
     }
 
+    if(!req.body) {
+        return
+    }
     if(!req.body.friendName) {
         return
     }
@@ -700,6 +717,9 @@ export const postBlock = async (req: UserRequest, res: Response) => {
         return
     }
 
+    if(!req.body) {
+        return
+    }
     if(!req.body.friendName) {
         return
     }
@@ -1056,6 +1076,9 @@ export const postUnBlock = async (req: UserRequest, res: Response) => {
         return
     }
 
+    if(!req.body) {
+        return
+    }
     if(!req.body.friendName) {
         return
     }

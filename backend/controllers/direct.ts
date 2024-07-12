@@ -148,7 +148,11 @@ export const postDirect = async (req: UserRequest, res: Response) => {
 
     const id = parseInt(req.params.id);
 
-    if(req.session.userId == id || !req.body.message) {
+    if(req.session.userId == id || !req.body) {
+        res.status(400).send({status: 400, message: 'Bad Request'});
+        return
+    }
+    if(!req.body.message) {
         res.status(400).send({status: 400, message: 'Bad Request'});
         return
     }
