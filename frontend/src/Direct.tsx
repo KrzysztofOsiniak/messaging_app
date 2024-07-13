@@ -39,6 +39,8 @@ export default function Direct() {
 
     const [directMessages, setDirectMessages] = useState(messages);
 
+    const [refreshCounter, setRefreshCounter] = useState(0);
+
     const isOnlineFriend = onlineFriends.includes(friendName);
 
     const input = useRef() as any;
@@ -57,6 +59,10 @@ export default function Direct() {
     },[users]);
 
     setActive(friendName);
+
+    setTimeout(() => {
+        setRefreshCounter(counter => counter+1);
+    }, 1000*60);
 
     async function updateMessages() {
         setShouldUpdate(false);
@@ -177,7 +183,7 @@ export default function Direct() {
         </header>
 
         <div className={styles.messagesContainer} id={typeof menuActive == 'undefined' ? 'messagesContainer' : 'messagesContainerMobile'}>
-            <Messages directMessages={directMessages} />
+            <Messages key={refreshCounter} directMessages={directMessages} />
         </div>
 
         <div className={styles.inputContainer} onSubmit={handleMessage}>
