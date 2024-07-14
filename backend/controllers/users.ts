@@ -324,20 +324,29 @@ export const postAddFriend = async (req: UserRequest, res: Response) => {
         }
 
         if(userStatus[0][0].status == 'pending') {
-            await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+            const success = await new Promise<void>((resolve, reject) => {db.getConnection( async (err, connection) => {
                 if(err) {
                     console.log(err);
+                    reject();
+                    connection.release();
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
                     return
                 }
                 let failed = false;
                 connection.beginTransaction(err => {
                     if(err) {
                         console.log(err);
-                        connection.release();
                         failed = true;
                     }
                 });
                 if(failed) {
+                    reject();
+                    connection.release();
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
                     return
                 }
 
@@ -347,39 +356,38 @@ export const postAddFriend = async (req: UserRequest, res: Response) => {
                     pendingRequestOnUsers[friendName] = null;
                     pendingRequestOnUsers[username] = null;
                     res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                    connection.rollback(err => {
-                        if(err) {
-                            console.log(err);
-                            connection.release();
-                        }
-                    });
+                    connection.rollback(() => {});
                     return null
                 }) as [UserQueryResult[], FieldPacket[]] | null;
                 if(usersFriend === null) {
+                    reject();
+                    connection.release();
                     return
                 }
+                
                 const userUpdate = await connection.promise().execute(`update friends set status = 'friend' where username = ? and friendName = ?;`, [username, friendName])
                 .catch(err => {
                     console.error(err);
                     pendingRequestOnUsers[friendName] = null;
                     pendingRequestOnUsers[username] = null;
                     res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                    connection.rollback(err => {
-                        if(err) {
-                            console.log(err);
-                            connection.release();
-                        }
-                    });
+                    connection.rollback(() => {});
                     return null
                 }) as [UserQueryResult[], FieldPacket[]] | null;
                 if(userUpdate === null) {
+                    reject();
+                    connection.release();
                     return
                 }
 
                 connection.commit();
                 connection.release();
                 resolve();
-            })});
+            })})
+            .then(() => true, () => false);
+            if(!success) {
+                return
+            }
 
             const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
@@ -617,20 +625,29 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
     }
     
     if(userStatus[0][0].status == 'friend') {
-        await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+        const success = await new Promise<void>((resolve, reject) => {db.getConnection( async (err, connection) => {
             if(err) {
                 console.log(err);
+                reject();
+                connection.release();
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 return
             }
             let failed = false;
             connection.beginTransaction(err => {
                 if(err) {
                     console.log(err);
-                    connection.release();
                     failed = true;
                 }
             });
             if(failed) {
+                reject();
+                connection.release();
+                res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                pendingRequestOnUsers[friendName] = null;
+                pendingRequestOnUsers[username] = null;
                 return
             }
 
@@ -640,15 +657,12 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
                 pendingRequestOnUsers[friendName] = null;
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                connection.rollback(err => {
-                    if(err) {
-                        console.log(err);
-                        connection.release();
-                    }
-                });
+                connection.rollback(() => {});
                 return null
             }) as [UserQueryResult[], FieldPacket[]] | null;
             if(removeFriendsUser === null) {
+                reject();
+                connection.release();
                 return
             }
 
@@ -658,22 +672,23 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
                 pendingRequestOnUsers[friendName] = null;
                 pendingRequestOnUsers[username] = null;
                 res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                connection.rollback(err => {
-                    if(err) {
-                        console.log(err);
-                        connection.release();
-                    }
-                });
+                connection.rollback(() => {});
                 return null
             }) as [UserQueryResult[], FieldPacket[]] | null;
             if(removeUsersFriend === null) {
+                reject();
+                connection.release();
                 return
             }
 
             connection.commit();
             connection.release();
             resolve();
-        })});
+        })})
+        .then(() => true, () => false);
+        if(!success) {
+            return
+        }
 
         const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
         where friends.username = ?;`, [username])
@@ -863,20 +878,29 @@ export const postBlock = async (req: UserRequest, res: Response) => {
         }
 
         if(userStatus[0][0].status == 'friend') {
-            await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+            const success = await new Promise<void>((resolve, reject) => {db.getConnection( async (err, connection) => {
                 if(err) {
                     console.log(err);
+                    reject();
+                    connection.release();
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
                     return
                 }
                 let failed = false;
                 connection.beginTransaction(err => {
                     if(err) {
                         console.log(err);
-                        connection.release();
                         failed = true;
                     }
                 });
                 if(failed) {
+                    reject();
+                    connection.release();
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
                     return
                 }
     
@@ -886,15 +910,12 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                     pendingRequestOnUsers[friendName] = null;
                     pendingRequestOnUsers[username] = null;
                     res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                    connection.rollback(err => {
-                        if(err) {
-                            console.log(err);
-                            connection.release();
-                        }
-                    });
+                    connection.rollback(() => {});
                     return null
                 }) as [UserQueryResult[], FieldPacket[]] | null;
                 if(usersFriend === null) {
+                    reject();
+                    connection.release();
                     return
                 }
     
@@ -904,22 +925,23 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                     pendingRequestOnUsers[friendName] = null;
                     pendingRequestOnUsers[username] = null;
                     res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                    connection.rollback(err => {
-                        if(err) {
-                            console.log(err);
-                            connection.release();
-                        }
-                    });
+                    connection.rollback(() => {});
                     return null
                 }) as [UserQueryResult[], FieldPacket[]] | null;
                 if(userUpdate === null) {
+                    reject();
+                    connection.release();
                     return
                 }
     
                 connection.commit();
                 connection.release();
                 resolve();
-            })});
+            })})
+            .then(() => true, () => false);
+            if(!success) {
+                return
+            }
 
             const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
@@ -989,20 +1011,29 @@ export const postBlock = async (req: UserRequest, res: Response) => {
         }
 
         if(friendStatus[0][0].status == 'pending') {
-            await new Promise<void>(resolve => {db.getConnection( async (err, connection) => {
+            const success = await new Promise<void>((resolve, reject) => {db.getConnection( async (err, connection) => {
                 if(err) {
                     console.log(err);
+                    reject();
+                    connection.release();
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
                     return
                 }
                 let failed = false;
                 connection.beginTransaction(err => {
                     if(err) {
                         console.log(err);
-                        connection.release();
                         failed = true;
                     }
                 });
                 if(failed) {
+                    reject();
+                    connection.release();
+                    res.status(500).send({status: 500, message: 'Unknown Server Error'});
+                    pendingRequestOnUsers[friendName] = null;
+                    pendingRequestOnUsers[username] = null;
                     return
                 }
     
@@ -1012,15 +1043,12 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                     pendingRequestOnUsers[friendName] = null;
                     pendingRequestOnUsers[username] = null;
                     res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                    connection.rollback(err => {
-                        if(err) {
-                            console.log(err);
-                            connection.release();
-                        }
-                    });
+                    connection.rollback(() => {});
                     return null
                 }) as [UserQueryResult[], FieldPacket[]] | null;
                 if(usersFriend === null) {
+                    reject();
+                    connection.release();
                     return
                 }
     
@@ -1030,22 +1058,23 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                     pendingRequestOnUsers[friendName] = null;
                     pendingRequestOnUsers[username] = null;
                     res.status(500).send({status: 500, message: 'Unknown Server Error'});
-                    connection.rollback(err => {
-                        if(err) {
-                            console.log(err);
-                            connection.release();
-                        }
-                    });
+                    connection.rollback(() => {});
                     return null
                 }) as [UserQueryResult[], FieldPacket[]] | null;
                 if(request === null) {
+                    reject();
+                    connection.release();
                     return
                 }
     
                 connection.commit();
                 connection.release();
                 resolve();
-            })});
+            })})
+            .then(() => true, () => false);
+            if(!success) {
+                return
+            }
 
             const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
