@@ -31,8 +31,8 @@ export async function loader() {
 }
 
 export default function Channels() {
-    const { username, friends, onlineUsersFriends, allDirectChats } = useLoaderData() as { username: string, friends: {friendName: string, status: string, id: number}[],
-    onlineUsersFriends: string[], allDirectChats: {friendName: string, order: number}[] };
+    const { username, friends, onlineUsersFriends, allDirectChats } = useLoaderData() as { username: string, friends: {friendName: string, status: string, id: number, notification: 1 | 0}[],
+    onlineUsersFriends: string[], allDirectChats: {friendName: string, order: number, notification: 1 | 0}[] };
 
     const [users, setUsers] = useState(friends);
 
@@ -91,15 +91,22 @@ export default function Channels() {
                         setOnlineFriends(friends => friends.filter(friend => friend != parsedData));
                         break
                     case 'directMessagesUpdate':
-                        setDirectMessagesUpdate(parsedData);
-                        if(parsedData.username == username) {
-                            setAllDirect(allDirect => allDirect.filter(user => user.friendName != parsedData.friendName));
-                            setAllDirect(allDirect => [...allDirect, {friendName: parsedData.friendName, order: parsedData.order}]);
-                        }
-                        else {
-                            setAllDirect(allDirect => allDirect.filter(user => user.friendName != parsedData.username));
-                            setAllDirect(allDirect => [...allDirect, {friendName: parsedData.username, order: parsedData.order}]);
-                        }
+                        setDirectMessagesUpdate({username: parsedData.username, message: parsedData.message, order: parsedData.order, date: parsedData.date} as any);
+                        setAllDirect(allDirect => {
+                            if(parsedData.username == username) {
+                                return [...allDirect.filter(user => user.friendName != parsedData.friendName), {friendName: parsedData.friendName, order: parsedData.order, notification: 0}]
+                            }
+                            return [...allDirect.filter(user => user.friendName != parsedData.friendName), {friendName: parsedData.friendName, order: parsedData.order, notification: 1}]
+                        });
+                        break
+                    case 'directNotificationOff':
+                        setAllDirect(allDirect => {
+                            const userToUpdate = allDirect.filter(user => user.friendName == parsedData.friendName)[0];
+                            if(userToUpdate) {
+                                return [...allDirect.filter(user => user.friendName != parsedData.friendName), {friendName: userToUpdate.friendName, order: userToUpdate.order, notification: 0}]
+                            }
+                            return allDirect
+                        });
                         break
                     case 'pong':
                         connectionAlive = 1;

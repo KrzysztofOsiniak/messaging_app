@@ -46,6 +46,9 @@ export default function Direct() {
     const input = useRef() as any;
 
     const isMounted = useRef(false) as any;
+    const isMounted2 = useRef(false) as any;
+    const isMounted3 = useRef(false) as any;
+    const isMounted4 = useRef(false) as any;
     const shouldScroll = useRef(false) as any;
     const updating = useRef(false) as any;
 
@@ -138,6 +141,15 @@ export default function Direct() {
         if(!isMounted.current) {
             messagesContainer.scrollTop = getMaxScroll(messagesContainer);
             isMounted.current = true;
+            fetch('http://localhost:8080/direct/notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    friendName: friendName
+                })
+            });
             return
         }
 
@@ -153,9 +165,24 @@ export default function Direct() {
             shouldScroll.current = true;
         }
         setDirectMessages(directMessages => [...directMessages, directMessagesUpdate]);
+        if(directMessagesUpdate.username == friendName) {
+            fetch('http://localhost:8080/direct/notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    friendName: friendName
+                })
+            });
+        }
     }, [directMessagesUpdate]);
 
     useEffect(() => {
+        if(!isMounted2.current) {
+            isMounted2.current = true;
+            return
+        }
         if(shouldScroll.current) {
             const messagesContainer = typeof menuActive == 'undefined' ? document.getElementById('messagesContainer') : document.getElementById('messagesContainerMobile') as any;
             shouldScroll.current = false;
@@ -164,11 +191,28 @@ export default function Direct() {
     }, [directMessages]);
 
     useEffect(() => {
+        if(!isMounted3.current) {
+            isMounted3.current = true;
+            return
+        }
+        fetch('http://localhost:8080/direct/notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                friendName: friendName
+            })
+        });
         shouldScroll.current = true;
         setDirectMessages(messages);
     }, [friendName]);
 
     useEffect(() => {
+        if(!isMounted4.current) {
+            isMounted4.current = true;
+            return
+        }
         updateMessages();
     }, [shouldUpdate]);
 

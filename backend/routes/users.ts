@@ -1,6 +1,6 @@
 import express from 'express'
 
-import {getFriends, getLogged, postAddFriend, postBlock, postDeclineFriend, postLogin, postLogout, postRemoveFriend, postSignup, postUnBlock} from '../controllers/users.js'
+import {getFriends, getLogged, postAddFriend, postBlock, postDeclineFriend, postFriendsNotificationOff, postLogin, postLogout, postRemoveFriend, postSignup, postUnBlock} from '../controllers/users.js'
 
 const router = express.Router();
 
@@ -23,5 +23,7 @@ router.post('/block', postBlock);
 router.post('/unblock', postUnBlock);
 
 router.get('/friends', getFriends);
+
+router.post('/notification', postFriendsNotificationOff);
 
 export default router

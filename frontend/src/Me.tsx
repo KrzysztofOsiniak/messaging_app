@@ -5,8 +5,9 @@ import menuImg from "./img/menu.svg";
 import logoutImg from "./img/logout.svg"
 
 export default function Me() {
-    const { username, users, onlineFriends, directMessagesUpdate, allDirect, shouldUpdate, setShouldUpdate } = useOutletContext() as { username: string, users: { friendName: string, status: string, id: number}[],
-    onlineFriends: string[], directMessagesUpdate: {username: string, message: string, order: number}, allDirect: {friendName: string, order: number}[], shouldUpdate: boolean, setShouldUpdate: any };
+    const { username, users, onlineFriends, directMessagesUpdate, allDirect, shouldUpdate, setShouldUpdate } = useOutletContext() as { username: string,
+    users: { friendName: string, status: string, id: number, notification: 1 | 0}[], onlineFriends: string[], directMessagesUpdate: {username: string, message: string, order: number, notification: 1 | 0},
+    allDirect: {friendName: string, order: number, notification: 1 | 0}[], shouldUpdate: boolean, setShouldUpdate: any };
 
     const [active, setActive] = useState('Friends');
     const [menuActive, setMenuActive] = useState(0);
@@ -109,7 +110,7 @@ export default function Me() {
     )
 }
 
-function Chats({ allDirect, active, handleClick, onlineFriends }: { allDirect: {friendName: string, order: number}[], active: string,
+function Chats({ allDirect, active, handleClick, onlineFriends }: { allDirect: {friendName: string, order: number, notification: 1 | 0}[], active: string,
     handleClick(friendName: string): void, onlineFriends: string[]},  ) {
     if(!allDirect) {
         return <></>
@@ -118,7 +119,7 @@ function Chats({ allDirect, active, handleClick, onlineFriends }: { allDirect: {
     .map(user => 
         <div className={`${styles.user} ${active == user.friendName ? styles.active : ''} ${onlineFriends.includes(user.friendName) ? styles.push : ''}`} onClick={() => handleClick(user.friendName)}>
             <span className={onlineFriends.includes(user.friendName) ? styles.online : ''}> </span>
-            <span className={styles.text}> {user.friendName} </span>
+            <span className={`${styles.text} ${user.notification ? styles.notification : ''}`}> {user.friendName} </span>
         </div>
     )
     return directList

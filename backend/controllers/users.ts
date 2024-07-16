@@ -23,12 +23,14 @@ type UserQueryResult = QueryResult & {
     messagesId: number
     password: string
     status: string
+    notification: 1 | 0
 }
 
 interface User {
     friendName: string
     status: string
     id: number
+    notification: 1 | 0
 }
 
 let pendingRequestOnUsers:{[key: string]: string | null} = {};
@@ -296,7 +298,7 @@ export const postAddFriend = async (req: UserRequest, res: Response) => {
             return
         }
         
-        const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
         where friends.username = ?;`, [friendName])
         .catch(err => {
             console.error(err);
@@ -389,7 +391,7 @@ export const postAddFriend = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
@@ -400,7 +402,7 @@ export const postAddFriend = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [friendName])
             .catch(err => {
                 console.error(err);
@@ -528,7 +530,7 @@ export const postDeclineFriend = async (req: UserRequest, res: Response) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
         where friends.username = ?;`, [username])
         .catch(err => {
             console.error(err);
@@ -690,7 +692,7 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
         where friends.username = ?;`, [username])
         .catch(err => {
             console.error(err);
@@ -701,7 +703,7 @@ export const postRemoveFriend = async (req: UserRequest, res: Response) => {
             return
         }
 
-        const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
         where friends.username = ?;`, [friendName])
         .catch(err => {
             console.error(err);
@@ -818,7 +820,7 @@ export const postBlock = async (req: UserRequest, res: Response) => {
             return
         }
 
-        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+        const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
         where friends.username = ?;`, [username])
         .catch(err => {
             console.error(err);
@@ -858,7 +860,7 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
@@ -943,7 +945,7 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
@@ -954,7 +956,7 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForFriend = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [friendName])
             .catch(err => {
                 console.error(err);
@@ -991,7 +993,7 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
@@ -1076,7 +1078,7 @@ export const postBlock = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
@@ -1180,7 +1182,7 @@ export const postUnBlock = async (req: UserRequest, res: Response) => {
                 return
             }
 
-            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+            const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
             where friends.username = ?;`, [username])
             .catch(err => {
                 console.error(err);
@@ -1211,7 +1213,7 @@ export const getFriends = async (req: UserRequest, res: Response) => {
         return
     }
 
-    const friends = await db.promise().execute(`select friends.friendName, friends.status, users.id from friends inner join users on friends.friendName = users.username
+    const friends = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
     where friends.username = ?;`, [req.session.username])
     .catch(err => {
         console.error(err);
@@ -1224,4 +1226,28 @@ export const getFriends = async (req: UserRequest, res: Response) => {
 
     const onlineFriends = wsFunctions.getOnlineFriends(friends[0]);
     res.status(200).send({friends: friends[0], status: 200, onlineFriends});
+}
+
+export const postFriendsNotificationOff = async (req: UserRequest, res: Response) => {
+    if(!req.session.logged) {
+        return
+    }
+
+    const username = req.session.username as string;
+    await db.promise().execute(`update friends set notification = 0 where username = ?`, [username]);
+
+    const usersForUser = await db.promise().execute(`select friends.friendName, friends.status, users.id, friends.notification from friends inner join users on friends.friendName = users.username
+    where friends.username = ?;`, [username])
+    .catch(err => {
+        console.error(err);
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
+        return null
+    }) as [UserQueryResult[], FieldPacket[]] | null;
+    if(usersForUser === null) {
+        return
+    }
+
+    wsFunctions.updateUsers(username, usersForUser[0]);
+
+    res.status(200).send({status: 200, message: 'success'});
 }

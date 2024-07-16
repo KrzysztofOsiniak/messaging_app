@@ -19,7 +19,10 @@ type UserQueryResult = QueryResult & {
     username: string
     friendName: string
     id: number
-    messagesId: string
+    messagesId: number
+    password: string
+    status: string
+    notification: 1 | 0
 }
 
 let pendingRequestOnUsers:{[key: string]: string|null} = {};
@@ -221,8 +224,10 @@ export const postDirect = async (req: UserRequest, res: Response) => {
     }
     const order = createDirectMessage[0].insertId;
 
+    await db.promise().execute(`update direct set notification = 1 where username = ? and friendName = ?`, [friendName, username]);
+
     wsFunctions.sendTo(username, {message: message, username: username, friendName: friendName, order: order, date: Math.floor(Date.now() / 1000)});
-    wsFunctions.sendTo(friendName, {message: message, username: username, order: order, date: Math.floor(Date.now() / 1000)});
+    wsFunctions.sendTo(friendName, {message: message, username: username, friendName: username, order: order, date: Math.floor(Date.now() / 1000)});
 
     res.status(200).send({status: 200, message: 'Message Sent'});
 }
@@ -234,7 +239,7 @@ export const getAllDirect = async (req: UserRequest, res: Response) => {
     }
 
     const username = req.session.username;
-    const allDirect = await db.promise().execute(`SELECT direct.friendName, max(directmessages.order) as 'order' FROM directmessages inner join
+    const allDirect = await db.promise().execute(`SELECT direct.friendName, max(directmessages.order) as 'order', direct.notification FROM directmessages inner join
     direct on directmessages.id = direct.messagesId WHERE direct.username = ? group by directmessages.id, direct.friendName;`, [username])
     .catch(err => {
         console.error(err);
@@ -246,4 +251,30 @@ export const getAllDirect = async (req: UserRequest, res: Response) => {
     }
 
     res.status(200).send({status: 200, allDirect: allDirect[0], message: 'Success'});
+}
+
+
+export const postDirectNotificationOff = async (req: UserRequest, res: Response) => {
+    if(!req.session.logged) {
+        return
+    }
+
+    if(!req.body.friendName || typeof req.body.friendName !== 'string') {
+        return
+    }
+
+    const username = req.session.username as string;
+    const friendName = req.body.friendName as string;
+    const updateNotification = await db.promise().execute(`update direct set notification = 0 where username = ? and friendName = ?`, [username, friendName])
+    .catch(() => {
+        res.status(500).send({status: 500, message: 'Unknown Server Error'});
+        return null
+    });
+    if(updateNotification === null) {
+        return
+    }
+
+    wsFunctions.setDirectNotificationOff(username, friendName);
+
+    res.status(200).send({status: 200, message: 'success'});
 }

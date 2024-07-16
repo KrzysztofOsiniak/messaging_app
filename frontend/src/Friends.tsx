@@ -1,5 +1,5 @@
 import styles from './styles/Friends.module.scss'
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import blockImg from "./img/block.svg";
 import acceptImg from "./img/accept.svg";
@@ -10,7 +10,7 @@ import menuImg from "./img/menu.svg";
 
 
 export default function Friends() {
-    const {users, onlineFriends, setActive: setActiveChat, menuActive, setMenuActive} = useOutletContext() as { users: {friendName: string, status: string, id: number}[],
+    const {users, onlineFriends, setActive: setActiveChat, menuActive, setMenuActive} = useOutletContext() as { users: {friendName: string, status: string, id: number, notification: 1 | 0}[],
     onlineFriends: string[], setActive: any, menuActive: number, setMenuActive: any };
 
     const whichActive = onlineFriends[0] ? 'Online' : 'Add';
@@ -22,6 +22,8 @@ export default function Friends() {
     const [notificationColor, setNotificationColor] = useState('');
 
     const [refreshCounter, setRefreshCounter] = useState(0);
+
+    const [pendingNotification, setPendingNotification] = useState(() => !users.every(user => user.notification == 0));
 
     setActiveChat('Friends');
 
@@ -172,6 +174,32 @@ export default function Friends() {
         return setMenuActive((menuActive: any) => menuActive ? 0 : 1);
     }
 
+    useEffect(() => {
+        if(active != 'Pending') {
+            return
+        }
+        if(!users.filter(user => user.status == 'pending')[0]) {
+            return
+        }
+        fetch('http://localhost:8080/users/notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    }, [active]);
+
+    useEffect(() => {
+        setPendingNotification(() => !users.every(user => user.notification == 0))
+        if(active == 'Pending') {
+            fetch('http://localhost:8080/users/notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+    }, [users]);
 
     return(
         <div className={styles.friends} onClick={() => {if(menuActive) setMenuActive(0)}}>
@@ -189,7 +217,7 @@ export default function Friends() {
                 </button>
 
                 <button className={ `${styles.option} ${ active == 'Pending' && styles.active }` } onClick={() => handleClick('Pending')}>
-                <span className={styles.optionText}>Pending</span>
+                <span className={`${styles.optionText} ${pendingNotification ? styles.pendingNotification : ''}`}>Pending</span>
                 </button>
 
                 <button className={ `${styles.option} ${ active == 'Blocked' && styles.active }` } onClick={() => handleClick('Blocked')}>
@@ -260,7 +288,7 @@ function All({ active, users, handleRemove, handleBlock, handleMessage }: {activ
 }
 
 // eslint-disable-next-line react/prop-types
-function Pending({ active, users, handleAccept, handleDecline, handleBlock, handleMessage }: {active: string, users: {friendName: string, status: string, id: number}[],
+function Pending({ active, users, handleAccept, handleDecline, handleBlock, handleMessage }: {active: string, users: {friendName: string, status: string, id: number, notification: 1 | 0}[],
     handleAccept(e: any, user: string): Promise<void>, handleDecline(e: any, user: string): Promise<void>, handleBlock(e: any, user: string): Promise<void>,
     handleMessage(id: number): void}) {
     if(active != "Pending") {

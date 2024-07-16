@@ -160,11 +160,11 @@ export default function userWs(ws: UserWebSocket, req: IncomingMessage) {
     });
 };
 
-function sendTo(username: string, message: {message: string, username: string, friendName?: string, order: number, date: number}) {
+function sendTo(username: string, message: {message: string, username: string, friendName: string, order: number, date: number}) {
     sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['directMessagesUpdate', message]), {binary: false}));
 }
 
-function updateUsers(username: string, users: {friendName: string, status: string, id: number}[]) {
+function updateUsers(username: string, users: {friendName: string, status: string, id: number, notification: 1 | 0}[]) {
     sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['users', users]), {binary: false}));
 }
 
@@ -181,4 +181,8 @@ function getOnlineFriends(users: {friendName: string, status: string, id: number
     return users.filter(user => user.status == 'friend').map(user => user.friendName).filter(friendName => onlineUsers.includes(friendName));
 }
 
-export { sendTo, updateUsers, updateOnline, getOnlineFriends }
+function setDirectNotificationOff(username: string, friendName: string) {
+    sockets.filter(socket => socket.username == username).forEach(socket => socket.send(JSON.stringify(['directNotificationOff', {username: username, friendName: friendName}]), {binary: false}));
+}
+
+export { sendTo, updateUsers, updateOnline, getOnlineFriends, setDirectNotificationOff }

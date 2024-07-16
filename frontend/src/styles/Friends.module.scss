@@ -239,6 +239,13 @@
     }
     margin-left: 2rem;
 }
+.pendingNotification {
+    animation: colorChange 2s infinite;
+}
+@keyframes colorChange {
+    0% { color: #fff; }
+    50% { color: rgb(0, 255, 0); }
+}
 @keyframes popGreen {
     0% {
         width: 90%;

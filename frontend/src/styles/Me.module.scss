@@ -187,6 +187,13 @@ h2 {
     }
     margin-top: 0.5rem;
 }
+.notification {
+    animation: colorChange 2s infinite;
+}
+@keyframes colorChange {
+    0% { color: #fff; }
+    50% { color: rgb(0, 255, 0); }
+}
 @keyframes meAppear {
     0% {
         width: 0rem;
