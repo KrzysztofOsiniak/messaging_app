@@ -3,31 +3,36 @@ import { useEffect, useRef, useState } from "react";
 import styles from './styles/Channels.module.scss'
 
 export async function loader() {
-    const { logged, username } = await fetch('http://localhost:8080/users/logged', {
+    // const { username, logged }
+    const a = fetch('http://localhost:8080/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
         }
     })
     .then(response => response.json());
-    if(!logged) {
-        return redirect('/')
+    // const { friends, onlineFriends }
+    const b = fetch('http://localhost:8080/users/friends', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json());
+    // const { allDirect }
+    const c = fetch('http://localhost:8080/direct/alldirect', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json());
+    const [result1, result2, result3] = await Promise.all([a, b, c]);
+    if(!result1.logged) {
+        return redirect('/');
     }
-    const { friends, onlineFriends } = await fetch('http://localhost:8080/users/friends', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json());
-    const { allDirect } = await fetch('http://localhost:8080/direct/alldirect', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json());
-    return { username: username, friends: friends, onlineUsersFriends: onlineFriends, allDirectChats: allDirect}
+
+    return { username: result1.username, friends: result2.friends, onlineUsersFriends: result2.onlineFriends, allDirectChats: result3.allDirect}
 }
 
 export default function Channels() {

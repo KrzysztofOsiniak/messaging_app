@@ -235,6 +235,7 @@ export const postDirect = async (req: UserRequest, res: Response) => {
 
 export const getAllDirect = async (req: UserRequest, res: Response) => {
     if(!req.session.logged) {
+        res.status(401).send({logged: false});
         return
     }
 
