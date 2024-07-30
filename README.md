@@ -31,8 +31,8 @@ In this app you can:
 - [typescript](https://github.com/microsoft/TypeScript) - type checking
 ## How To Install/Run
 ### Prerequisites
-- Have [node.js](https://nodejs.org/en/download) with npm installed
-- Have [mysql server](https://www.apachefriends.org/) installed
+- Have [node.js](https://nodejs.org/en/download) with npm installed (confirmed working version of node:20.9.0)
+- Have [mysql server](https://www.apachefriends.org/) installed (confirmed working version of mysql:10.4.24-MariaDB)
 - Create a database called `users`
 - Create the tables by copying the entirety of this file: [createTables.sql](https://github.com/KrzysztofOsiniak/messaging_app/blob/react/createTables.sql) and running it as a single query in `users`
 - Make sure you have mysql configured with these options or change them to your own in [database.ts](https://github.com/KrzysztofOsiniak/messaging_app/blob/react/backend/database.ts) and [.env](https://github.com/KrzysztofOsiniak/messaging_app/blob/react/backend/.env):
