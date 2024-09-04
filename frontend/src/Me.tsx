@@ -17,7 +17,7 @@ export default function Me() {
     const navigate = useNavigate();
 
     async function handleClick(friendName: string) {
-        const { status, id } = await fetch(`http://localhost:8080/direct/users/${friendName}`, {
+        const { status, id } = await fetch(`/api/direct/users/${friendName}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -42,7 +42,7 @@ export default function Me() {
     }
 
     async function handleLogout() {
-        const { status } = await fetch(`http://localhost:8080/users/logout`, {
+        const { status } = await fetch(`/api/users/logout`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -110,14 +110,18 @@ export default function Me() {
     )
 }
 
-function Chats({ allDirect, active, handleClick, onlineFriends }: { allDirect: {friendName: string, order: number, notification: 1 | 0}[], active: string,
-    handleClick(friendName: string): void, onlineFriends: string[]},  ) {
+function Chats(props: { allDirect: {friendName: string, order: number, notification: 1 | 0}[], active: string, handleClick(friendName: string): void, onlineFriends: string[]}) {
+    if(!props) {
+        return <></>
+    }
+    const { allDirect, active, handleClick, onlineFriends } = props;
     if(!allDirect) {
         return <></>
     }
+    
     const directList = allDirect.sort((a, b) => b.order - a.order)
     .map(user => 
-        <div className={`${styles.user} ${active == user.friendName ? styles.active : ''} ${onlineFriends.includes(user.friendName) ? styles.push : ''}`} onClick={() => handleClick(user.friendName)}>
+        <div key={user.order} className={`${styles.user} ${active == user.friendName ? styles.active : ''} ${onlineFriends.includes(user.friendName) ? styles.push : ''}`} onClick={() => handleClick(user.friendName)}>
             <span className={onlineFriends.includes(user.friendName) ? styles.online : ''}> </span>
             <span className={`${styles.text} ${user.notification ? styles.notification : ''}`}> {user.friendName} </span>
         </div>

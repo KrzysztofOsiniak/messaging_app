@@ -25,7 +25,7 @@ export default function Friends() {
 
     const [pendingNotification, setPendingNotification] = useState(() => !users.every(user => user.notification == 0));
 
-    setActiveChat('Friends');
+    const isMounted = useRef(0);
 
     const navigate = useNavigate();
 
@@ -36,7 +36,7 @@ export default function Friends() {
 
     async function handleAccept(e: any, user: string) {
         e.stopPropagation();
-        const { message, status } = await fetch('http://localhost:8080/users/addfriend', {
+        const { message, status } = await fetch('/api/users/addfriend', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -57,7 +57,7 @@ export default function Friends() {
 
     async function handleDecline(e: any, user: string) {
         e.stopPropagation();
-        const { message, status } = await fetch('http://localhost:8080/users/declinefriend', {
+        const { message, status } = await fetch('/api/users/declinefriend', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -78,7 +78,7 @@ export default function Friends() {
 
     async function handleRemove(e: any, user: string) {
         e.stopPropagation();
-        const { message, status } = await fetch('http://localhost:8080/users/removefriend', {
+        const { message, status } = await fetch('/api/users/removefriend', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -99,7 +99,7 @@ export default function Friends() {
 
     async function handleBlock(e: any, user: string) {
         e.stopPropagation();
-        const { message, status } = await fetch('http://localhost:8080/users/block', {
+        const { message, status } = await fetch('/api/users/block', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -120,7 +120,7 @@ export default function Friends() {
 
     async function handleUnBlock(e: any, user: string) {
         e.stopPropagation();
-        const { message, status } = await fetch('http://localhost:8080/users/unblock', {
+        const { message, status } = await fetch('/api/users/unblock', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -141,7 +141,7 @@ export default function Friends() {
     
     async function handleAdd(e: any, text: any) {
         e.preventDefault();
-        const { message, status } = await fetch('http://localhost:8080/users/addfriend', {
+        const { message, status } = await fetch('/api/users/addfriend', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -181,7 +181,7 @@ export default function Friends() {
         if(!users.filter(user => user.status == 'pending')[0]) {
             return
         }
-        fetch('http://localhost:8080/users/notification', {
+        fetch('/api/users/notification', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -190,9 +190,12 @@ export default function Friends() {
     }, [active]);
 
     useEffect(() => {
-        setPendingNotification(() => !users.every(user => user.notification == 0))
+        setPendingNotification(() => !users.every(user => user.notification == 0));
+        if(users.every(user => user.notification == 0)) {
+            return
+        }
         if(active == 'Pending') {
-            fetch('http://localhost:8080/users/notification', {
+            fetch('/api/users/notification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -200,6 +203,13 @@ export default function Friends() {
             });
         }
     }, [users]);
+
+    useEffect(() => {
+        if(!isMounted.current) {
+            setActiveChat('Friends');
+            isMounted.current = 1;
+        }
+    }, [])
 
     return(
         <div className={styles.friends} onClick={() => {if(menuActive) setMenuActive(0)}}>

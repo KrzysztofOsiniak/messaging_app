@@ -4,7 +4,7 @@ import styles from './styles/Channels.module.scss'
 
 export async function loader() {
     // const { username, logged }
-    const a = fetch('http://localhost:8080/users/logged', {
+    const a = fetch('/api/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -12,7 +12,7 @@ export async function loader() {
     })
     .then(response => response.json());
     // const { friends, onlineFriends }
-    const b = fetch('http://localhost:8080/users/friends', {
+    const b = fetch('/api/users/friends', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -20,7 +20,7 @@ export async function loader() {
     })
     .then(response => response.json());
     // const { allDirect }
-    const c = fetch('http://localhost:8080/direct/alldirect', {
+    const c = fetch('/api/direct/alldirect', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -53,6 +53,9 @@ export default function Channels() {
 
 
     useEffect(() => {
+        if(ws.current != null) {
+            return
+        }
         const CONNECTING = 0;
         /*
             const OPEN = 1;
@@ -125,7 +128,7 @@ export default function Channels() {
         }
 
         async function updateData() {
-            const { friends, onlineFriends } = await fetch('http://localhost:8080/users/friends', {
+            const { friends, onlineFriends } = await fetch('/api/users/friends', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -135,7 +138,7 @@ export default function Channels() {
             setUsers(friends);
             setOnlineFriends(onlineFriends);
 
-            const { allDirect } = await fetch('http://localhost:8080/direct/alldirect', {
+            const { allDirect } = await fetch('/api/direct/alldirect', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -149,7 +152,7 @@ export default function Channels() {
             setTimeout(() => {
                 if(ws.current === null) {
                     console.log('reconnecting...');
-                    ws.current = new WebSocket("ws://localhost:8080");
+                    ws.current = new WebSocket("/ws");
                     reconnecting = 1;
                     initiate();
                 }
@@ -180,12 +183,14 @@ export default function Channels() {
             setTimeout(checkIfConneted, 4 * 1000);
         }
 
-        ws.current = new WebSocket("ws://localhost:8080");
+        ws.current = new WebSocket("/ws");
         initiate();
         checkIfConneted();
 
         return () => {
-            ws.current.close();
+            if(ws.current.readyState != CONNECTING) {
+                ws.current.close();
+            }
         };
     }, []);
 

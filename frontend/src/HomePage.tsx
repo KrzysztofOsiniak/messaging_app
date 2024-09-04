@@ -2,7 +2,7 @@ import { redirect, useNavigate } from "react-router-dom";
 import styles from './styles/HomePage.module.scss'
 
 export async function loader() {
-    const { logged } = await fetch('http://localhost:8080/users/logged', {
+    const { logged } = await fetch('/api/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'

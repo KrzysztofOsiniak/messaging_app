@@ -58,9 +58,9 @@ app.use(helmet())
 app.disable('x-powered-by');
 
 
-app.use('/users', usersRoutes);
+app.use('/api/users', usersRoutes);
 
-app.use('/direct', directRoutes);
+app.use('/api/direct', directRoutes);
 
 app.use(express.static('../frontend/dist'));
 
