@@ -9,6 +9,8 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
+    host: true,
+    origin: 'http://localhost:5173', // exposed node container address
     hmr: {
       host: "localhost",
       protocol: "ws",
@@ -16,10 +18,10 @@ export default defineConfig({
     port: 5173,
     proxy: {
         '/api': {
-            target: 'http://localhost:8080/',
+            target: 'http://backend:8080'
         },
         '/ws': {
-          target: 'ws://localhost:8080/',
+          target: 'ws://backend:8080/',
           ws: true,
         }
     },
