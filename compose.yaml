@@ -10,7 +10,7 @@
 services:
   backend:
     build:
-      context: "/backend/"
+      context: "backend/"
     ports:
       - "8080:8080"
     env_file: "backend/.env"
@@ -22,7 +22,7 @@ services:
     # is the port inside the container.
   frontend:
     build:
-      context: "/frontend/"
+      context: "frontend/"
     ports:
       - "5173:5173"
     # If your application exposes a port, uncomment the following lines and change
