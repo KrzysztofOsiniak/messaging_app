@@ -152,7 +152,7 @@ export default function Channels() {
             setTimeout(() => {
                 if(ws.current === null) {
                     console.log('reconnecting...');
-                    ws.current = new WebSocket("/ws");
+                    ws.current = new WebSocket("ws://localhost:5173/ws");
                     reconnecting = 1;
                     initiate();
                 }
@@ -183,7 +183,7 @@ export default function Channels() {
             setTimeout(checkIfConneted, 4 * 1000);
         }
 
-        ws.current = new WebSocket("/ws");
+        ws.current = new WebSocket("ws://localhost:5173/ws");
         initiate();
         checkIfConneted();
 
