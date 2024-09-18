@@ -43,6 +43,7 @@ In this app you can:
 ```
     git switch docker
 ```
+- Start the docker app
 - Build and run with docker compose
 ```
     docker compose up --build
