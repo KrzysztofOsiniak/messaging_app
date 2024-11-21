@@ -29,30 +29,7 @@ In this app you can:
 - [uuid](https://github.com/uuidjs/uuid) - library for generating unique id (used for sessions)
 - [helmet](https://github.com/helmetjs/helmet) - library for securing http response headers
 - [typescript](https://github.com/microsoft/TypeScript) - type checking
-## How To Install/Run (With Docker - Tested On Windows/Linux)
-### Prerequisites
-- Have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed
-- Have [docker](https://www.docker.com/) installed
-### How to run
-- Clone the repository
-```
-    git clone https://github.com/KrzysztofOsiniak/messaging_app
-```
-- Go to messaging_app folder
-- Switch to docker branch
-```
-    git switch docker
-```
-- Build and run with docker compose
-```
-    docker compose up --build
-```
-If on linux you may need to additionally install docker-compose and run it like this
-```
-    docker-compose up --build
-```
-- After successful build the app should be running on http://localhost:5173
-## How To Install/Run (Without Docker)
+## How To Install/Run
 ### Prerequisites
 - Have git installed
 - Have [node.js](https://nodejs.org/en/download) with npm installed (confirmed working version of node:20.9.0)
@@ -71,6 +48,6 @@ Using bash terminal:
 - Go to messaging_app folder
 - Install app dependencies and run with npm
 ```
-(cd frontend; npm i; npm run dev & cd ../backend; npm i; tsc; node index.js)
+(cd frontend; npm i; npm run dev & cd ../backend; npm i; tsc; cd ../frontend; npm start & cd ../backend; node index.js)
 ```
-- After successful build the app should be running on http://localhost:5173
+- After successful build the app should appear on the screen
