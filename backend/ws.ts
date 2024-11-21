@@ -20,8 +20,16 @@ let sockets: UserWebSocket[] = [];
 export default function userWs(ws: UserWebSocket, req: IncomingMessage) {
     ws.on('error', console.error);
     console.log('started');
-    const index: number = req.rawHeaders.indexOf('Cookie');
+    
+    let index: number;
+    if(req.rawHeaders.indexOf('Cookie') != -1) {
+        index = req.rawHeaders.indexOf('Cookie');
+    }
+    else {
+        index = req.rawHeaders.indexOf('cookie');
+    }
     if(index == -1) {
+        console.log("Cookie header not found");
         ws.close();
         return
     }

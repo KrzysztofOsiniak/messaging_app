@@ -7,11 +7,14 @@ import {v4} from 'uuid'
 import helmet from 'helmet'
 import { createServer } from "http";
 import { WebSocketServer } from 'ws';
+import { dbInit } from './database.js'
 // @ts-ignore: lack of type documentation
 const MySQLStore = MySQLSession(session);
 import path from 'path'
 
 const __dirname = path.resolve();
+
+await dbInit();
 
 import usersRoutes from './routes/users.js'
 import directRoutes from './routes/direct.js'
@@ -58,9 +61,9 @@ app.use(helmet())
 app.disable('x-powered-by');
 
 
-app.use('/users', usersRoutes);
+app.use('/api/users', usersRoutes);
 
-app.use('/direct', directRoutes);
+app.use('/api/direct', directRoutes);
 
 app.use(express.static('../frontend/dist'));
 

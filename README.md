@@ -29,12 +29,34 @@ In this app you can:
 - [uuid](https://github.com/uuidjs/uuid) - library for generating unique id (used for sessions)
 - [helmet](https://github.com/helmetjs/helmet) - library for securing http response headers
 - [typescript](https://github.com/microsoft/TypeScript) - type checking
-## How To Install/Run
+## How To Install/Run (With Docker - Tested On Windows/Linux)
 ### Prerequisites
+- Have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed
+- Have [docker](https://www.docker.com/) installed
+### How to run
+- Clone the repository
+```
+    git clone https://github.com/KrzysztofOsiniak/messaging_app
+```
+- Go to messaging_app folder
+- Switch to docker branch
+```
+    git switch docker
+```
+- Build and run with docker compose
+```
+    docker compose up --build
+```
+If on linux you may need to additionally install docker-compose and run it like this
+```
+    docker-compose up --build
+```
+- After successful build the app should be running on http://localhost:5173
+## How To Install/Run (Without Docker)
+### Prerequisites
+- Have git installed
 - Have [node.js](https://nodejs.org/en/download) with npm installed (confirmed working version of node:20.9.0)
 - Have [mysql server](https://www.apachefriends.org/) installed (confirmed working version of mysql:10.4.24-MariaDB)
-- Create a database called `users`
-- Create the tables by copying the entirety of this file: [createTables.sql](https://github.com/KrzysztofOsiniak/messaging_app/blob/react/createTables.sql) and running it as a single query in `users`
 - Make sure you have mysql configured with these options or change them to your own in [.env](https://github.com/KrzysztofOsiniak/messaging_app/blob/react/backend/.env):
 ```
     user: 'root',
@@ -42,13 +64,13 @@ In this app you can:
 ```
 ### How to run
 Using bash terminal:
+- Clone the repository
+```
+    git clone https://github.com/KrzysztofOsiniak/messaging_app
+```
 - Go to messaging_app folder
-- Install app dependencies with npm:
+- Install app dependencies and run with npm
 ```
-(cd frontend; npm install; cd ../backend; npm install)
+(cd frontend; npm i; npm run dev & cd ../backend; npm i; tsc; node index.js)
 ```
-- Build and run the app:
-```
-(cd frontend; npm run build; cd ../backend; npm run build; node index.js)
-```
-- After successful build the app should be running on http://localhost:8080
+- After successful build the app should be running on http://localhost:5173

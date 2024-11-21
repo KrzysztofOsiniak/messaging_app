@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import menuImg from "./img/menu.svg";
 
 export async function loader(id: any) {
-    const { logged } = await fetch('http://localhost:8080/users/logged', {
+    const { logged } = await fetch('/api/users/logged', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -16,7 +16,7 @@ export async function loader(id: any) {
     }
     const userId = parseInt(id) as number;
 
-    const {friendName, messages, status, message} = await fetch(`http://localhost:8080/direct/${userId}`, {
+    const {friendName, messages, status, message} = await fetch(`/api/direct/${userId}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
@@ -49,6 +49,7 @@ export default function Direct() {
     const isMounted2 = useRef(false) as any;
     const isMounted3 = useRef(false) as any;
     const isMounted4 = useRef(false) as any;
+    const isMounted5 = useRef(false) as any;
     const shouldScroll = useRef(false) as any;
     const updating = useRef(false) as any;
 
@@ -61,7 +62,6 @@ export default function Direct() {
         return false
     },[users]);
 
-    setActive(friendName);
 
     setTimeout(() => {
         setRefreshCounter(counter => counter+1);
@@ -73,7 +73,7 @@ export default function Direct() {
             return
         }
         updating.current = true;
-        const { messages, status, message } = await fetch(`http://localhost:8080/direct/${userId}`, {
+        const { messages, status, message } = await fetch(`/api/direct/${userId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -89,7 +89,7 @@ export default function Direct() {
 
     async function handleBlock(e: any) {
         e.stopPropagation();
-        const { status } = await fetch('http://localhost:8080/users/block', {
+        const { status } = await fetch('/api/users/block', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -108,7 +108,7 @@ export default function Direct() {
         e.preventDefault()
         const messageSent = input.current.value;
         input.current.value = '';
-        const { status } = await fetch(`http://localhost:8080/direct/${userId}`, {
+        const { status } = await fetch(`/api/direct/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -141,7 +141,7 @@ export default function Direct() {
         if(!isMounted.current) {
             messagesContainer.scrollTop = getMaxScroll(messagesContainer);
             isMounted.current = true;
-            fetch('http://localhost:8080/direct/notification', {
+            fetch('/api/direct/notification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -153,9 +153,13 @@ export default function Direct() {
             return
         }
 
+        if(!directMessagesUpdate) {
+            return
+        }
         if(directMessagesUpdate.username != friendName && directMessagesUpdate.username != username) {
             return
         }
+        
         const repeatedMessage = directMessages.filter(message => message.order == directMessagesUpdate.order);
         if(repeatedMessage[0]) {
             return
@@ -166,7 +170,7 @@ export default function Direct() {
         }
         setDirectMessages(directMessages => [...directMessages, directMessagesUpdate]);
         if(directMessagesUpdate.username == friendName) {
-            fetch('http://localhost:8080/direct/notification', {
+            fetch('/api/direct/notification', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -195,7 +199,7 @@ export default function Direct() {
             isMounted3.current = true;
             return
         }
-        fetch('http://localhost:8080/direct/notification', {
+        fetch('/api/direct/notification', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -215,6 +219,13 @@ export default function Direct() {
         }
         updateMessages();
     }, [shouldUpdate]);
+
+    useEffect(() => {
+        if(!isMounted5.current) {
+            setActive(friendName);
+            isMounted5.current = true;
+        }
+    }, []);
 
     return (
     <div className={styles.direct} onClick={() => {if(menuActive) setMenuActive(0)}}>
